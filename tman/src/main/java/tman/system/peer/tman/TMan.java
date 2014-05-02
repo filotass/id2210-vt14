@@ -156,7 +156,9 @@ public final class TMan extends ComponentDefinition {
         @Override
         public void handle(ExchangeMsg.Response event) {
         	
-        	
+        	// when a request is received, it contains the DescriptorBuffer sent by the 
+        	// requested peer. So let's take on of these and save it as views?
+        	view = event.getSelectedBuffer().getDescriptors().get(0);
         }
     };
 
