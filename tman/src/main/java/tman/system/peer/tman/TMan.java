@@ -2,13 +2,19 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
+import cyclon.system.peer.cyclon.PeerDescriptor;
+
 import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
+import cyclon.system.peer.cyclon.DescriptorBuffer;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,23 +28,23 @@ import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 import se.sics.kompics.timer.Timer;
-
 import tman.simulator.snapshot.Snapshot;
 
 public final class TMan extends ComponentDefinition {
 
-    private static final Logger logger = LoggerFactory.getLogger(TMan.class);
-
-    Negative<TManSamplePort> tmanPort = negative(TManSamplePort.class);
-    Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
-    Positive<Network> networkPort = positive(Network.class);
-    Positive<Timer> timerPort = positive(Timer.class);
-    private long period;
-    private Address self;
-    private ArrayList<Address> tmanPartners;
-    private TManConfiguration tmanConfiguration;
-    private Random r;
-    private AvailableResources availableResources;
+    private static final Logger logger           = LoggerFactory.getLogger(TMan.class);
+    Negative<TManSamplePort>    tmanPort         = negative(TManSamplePort.class);
+    Positive<CyclonSamplePort>  cyclonSamplePort = positive(CyclonSamplePort.class);
+    Positive<Network>           networkPort      = positive(Network.class);
+    Positive<Timer>             timerPort        = positive(Timer.class);
+    private long                period;
+    private Address             self;
+    private ArrayList<Address>  tmanPartners;
+    private TManConfiguration   tmanConfiguration;
+    private Random              r;
+    private AvailableResources  availableResources;
+    
+    private PeerDescriptor      view;
 
     public class TManSchedule extends Timeout {
 
@@ -64,18 +70,20 @@ public final class TMan extends ComponentDefinition {
     Handler<TManInit> handleInit = new Handler<TManInit>() {
         @Override
         public void handle(TManInit init) {
+        	
             self = init.getSelf();
             tmanConfiguration = init.getConfiguration();
             period = tmanConfiguration.getPeriod();
             r = new Random(tmanConfiguration.getSeed());
             availableResources = init.getAvailableResources();
+            
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
             trigger(rst, timerPort);
-
+            
         }
     };
-
+    
     Handler<TManSchedule> handleRound = new Handler<TManSchedule>() {
         @Override
         public void handle(TManSchedule event) {
@@ -92,20 +100,63 @@ public final class TMan extends ComponentDefinition {
             List<Address> cyclonPartners = event.getSample();
 
             // merge cyclonPartners into TManPartners
+            
+            //TODO: is this right?
+            tmanPartners.addAll(cyclonPartners);
         }
     };
 
+    /**
+     * When handling a request,  
+     * 
+     * TODO: What is view?
+     * 
+     * @see https://www.kth.se/social/upload/51647982f276546170461c46/4-gossip.pdf
+     */
     Handler<ExchangeMsg.Request> handleTManPartnersRequest = new Handler<ExchangeMsg.Request>() {
         @Override
         public void handle(ExchangeMsg.Request event) {
-
+        	
+        	// recv bufp from p (event)
+        	DescriptorBuffer bufp = event.getRandomBuffer();
+        	// myProfile = numFreeCpus, freeMemoryInMbs
+        	PeerDescriptor myDescriptor = new PeerDescriptor(self); // TODO: what should age be in the descriptor?
+        	
+        	// buf is what to send back to the peer asking
+        	//tmanPartners.
+        	
+        	ArrayList<PeerDescriptor> buf = new ArrayList<PeerDescriptor>();
+        	buf.add(view); // add view to buf
+        	buf.add(myDescriptor); // merge(view,mydescriptor)
+        	buf.add(myDescriptor); // TODO: merge(buf,rnd.view)
+        	// send buf to p
+        	
+        	DescriptorBuffer returnbuf = new DescriptorBuffer(self, buf);
+        	
+        	// TODO: how to create UUID?
+        	ExchangeMsg.Response returnMsg = new ExchangeMsg.Response(new UUID(0, 1), returnbuf, self, event.getSource());
+        	
+        	// send buf to p
+        	trigger(returnMsg,tmanPort); // TODO: tmanPort correct port?
+        	
+        	// clear buf to make it copy bufp
+        	buf.clear();
+        	buf.addAll(bufp.getDescriptors());
+        	buf.add(view); // merge(bufp,view)
+        	
+        	view = buf.get(0); // TODO: implement selectView(buf)
         }
     };
 
+    /**
+     * This node has requested to see availableResources of another resource and
+     * now availableResources are returned to us.
+     */
     Handler<ExchangeMsg.Response> handleTManPartnersResponse = new Handler<ExchangeMsg.Response>() {
         @Override
         public void handle(ExchangeMsg.Response event) {
-
+        	
+        	
         }
     };
 
