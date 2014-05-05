@@ -133,8 +133,8 @@ public final class TMan extends ComponentDefinition {
         	
         	DescriptorBuffer returnbuf = new DescriptorBuffer(self, buf);
         	
-        	// TODO: how to create UUID?
-        	ExchangeMsg.Response returnMsg = new ExchangeMsg.Response(new UUID(0, 1), returnbuf, self, event.getSource());
+        	// TODO: how to create UUID? is this correct?
+        	ExchangeMsg.Response returnMsg = new ExchangeMsg.Response(UUID.randomUUID(), returnbuf, self, event.getSource());
         	
         	// send buf to p
         	trigger(returnMsg,tmanPort); // TODO: tmanPort correct port?
