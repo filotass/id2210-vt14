@@ -11,8 +11,10 @@ import cyclon.system.peer.cyclon.CyclonSamplePort;
 import cyclon.system.peer.cyclon.DescriptorBuffer;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -44,7 +46,8 @@ public final class TMan extends ComponentDefinition {
     private Random              r;
     private AvailableResources  availableResources;
     
-    private PeerDescriptor      view;
+    private ArrayList<Address> view;
+
 
     public class TManSchedule extends Timeout {
 
@@ -100,9 +103,10 @@ public final class TMan extends ComponentDefinition {
             List<Address> cyclonPartners = event.getSample();
 
             // merge cyclonPartners into TManPartners
-            
-            //TODO: is this right?
+
             tmanPartners.addAll(cyclonPartners);
+            Utils.removeDuplicates(tmanPartners);
+            
         }
     };
 
@@ -116,35 +120,31 @@ public final class TMan extends ComponentDefinition {
     Handler<ExchangeMsg.Request> handleTManPartnersRequest = new Handler<ExchangeMsg.Request>() {
         @Override
         public void handle(ExchangeMsg.Request event) {
+  
+        	TManAddressBuffer buf_p = event.getRandomBuffer();
+        
+        	ArrayList<Address> temp = new ArrayList<Address>();
+        	temp.addAll(view);
+        	temp.add(self);
+        	TManAddressBuffer buf = new TManAddressBuffer(self, temp);
+    
+        	//Get a Random View ==> It is a random sample of nodes from the network using CYCLON
+        	ExchangeMsg.Response responseMsg = new ExchangeMsg.Response(event.getRequestId(), buf, self, event.getSource());
+        	trigger(responseMsg, tmanPort);
+        
+        	temp.clear();
+        	temp.addAll(view);
+        	temp.addAll(buf_p.getAddresses());
         	
-        	// recv bufp from p (event)
-        	DescriptorBuffer bufp = event.getRandomBuffer();
-        	// myProfile = numFreeCpus, freeMemoryInMbs
-        	PeerDescriptor myDescriptor = new PeerDescriptor(self); // TODO: what should age be in the descriptor?
         	
-        	// buf is what to send back to the peer asking
-        	//tmanPartners.
+        	buf = new TManAddressBuffer(self, temp);
         	
-        	ArrayList<PeerDescriptor> buf = new ArrayList<PeerDescriptor>();
-        	buf.add(view); // add view to buf
-        	buf.add(myDescriptor); // merge(view,mydescriptor)
-        	buf.add(myDescriptor); // TODO: merge(buf,rnd.view)
-        	// send buf to p
+        	//TODO call c times getSoftMaxAddress();
         	
-        	DescriptorBuffer returnbuf = new DescriptorBuffer(self, buf);
+        
+
         	
-        	// TODO: how to create UUID? is this correct?
-        	ExchangeMsg.Response returnMsg = new ExchangeMsg.Response(UUID.randomUUID(), returnbuf, self, event.getSource());
         	
-        	// send buf to p
-        	trigger(returnMsg,tmanPort); // TODO: tmanPort correct port?
-        	
-        	// clear buf to make it copy bufp
-        	buf.clear();
-        	buf.addAll(bufp.getDescriptors());
-        	buf.add(view); // merge(bufp,view)
-        	
-        	view = buf.get(0); // TODO: implement selectView(buf)
         }
     };
 
@@ -156,9 +156,7 @@ public final class TMan extends ComponentDefinition {
         @Override
         public void handle(ExchangeMsg.Response event) {
         	
-        	// when a request is received, it contains the DescriptorBuffer sent by the 
-        	// requested peer. So let's take on of these and save it as views?
-        	view = event.getSelectedBuffer().getDescriptors().get(0);
+      
         }
     };
 
