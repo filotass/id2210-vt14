@@ -2,7 +2,6 @@ package tman.system.peer.tman;
 
 import java.util.UUID;
 
-import cyclon.system.peer.cyclon.DescriptorBuffer;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -14,10 +13,10 @@ public class ExchangeMsg {
 
         private static final long serialVersionUID = 8493601671018888143L;
         private final UUID requestId;
-        private final DescriptorBuffer randomBuffer;
+        private final TManAddressBuffer randomBuffer;
 
 
-        public Request(UUID requestId, DescriptorBuffer randomBuffer, Address source, 
+        public Request(UUID requestId, TManAddressBuffer randomBuffer, Address source, 
                 Address destination) {
             super(source, destination);
             this.requestId = requestId;
@@ -30,7 +29,7 @@ public class ExchangeMsg {
         }
 
         
-        public DescriptorBuffer getRandomBuffer() {
+        public TManAddressBuffer getRandomBuffer() {
             return randomBuffer;
         }
 
@@ -44,10 +43,10 @@ public class ExchangeMsg {
 
         private static final long serialVersionUID = -5022051054665787770L;
         private final UUID requestId;
-        private final DescriptorBuffer selectedBuffer;
+        private final TManAddressBuffer selectedBuffer;
 
 
-        public Response(UUID requestId, DescriptorBuffer selectedBuffer, Address source, Address destination) {
+        public Response(UUID requestId, TManAddressBuffer selectedBuffer, Address source, Address destination) {
             super(source, destination);
             this.requestId = requestId;
             this.selectedBuffer = selectedBuffer;
@@ -59,7 +58,7 @@ public class ExchangeMsg {
         }
 
 
-        public DescriptorBuffer getSelectedBuffer() {
+        public TManAddressBuffer getSelectedBuffer() {
             return selectedBuffer;
         }
 
