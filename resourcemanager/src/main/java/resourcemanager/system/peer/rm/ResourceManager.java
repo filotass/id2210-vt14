@@ -42,7 +42,7 @@ public final class ResourceManager extends ComponentDefinition {
     Positive<Timer> timerPort = positive(Timer.class);
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
-    //Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
+    Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
     ArrayList<Address> neighbours = new ArrayList<Address>();
     private Address self;
     private RmConfiguration configuration;
@@ -68,9 +68,7 @@ public final class ResourceManager extends ComponentDefinition {
         subscribe(handleUpdateTimeout, timerPort);
         subscribe(handleResourceAllocationRequest, networkPort);
         subscribe(handleResourceAllocationResponse, networkPort);
-        //subscribe(handleTManSample, tmanPort);
-        
-        
+        subscribe(handleTManSample, tmanPort);
     }
 	
     Handler<RmInit> handleInit = new Handler<RmInit>() {
@@ -144,11 +142,11 @@ public final class ResourceManager extends ComponentDefinition {
 //            trigger(req, networkPort);
         }
     };
-//    Handler<TManSample> handleTManSample = new Handler<TManSample>() {
-//        @Override
-//        public void handle(TManSample event) {
-//            // TODO: 
-//        }
-//    };
+    Handler<TManSample> handleTManSample = new Handler<TManSample>() {
+        @Override
+        public void handle(TManSample event) {
+            // TODO: 
+        }
+    };
 
 }
