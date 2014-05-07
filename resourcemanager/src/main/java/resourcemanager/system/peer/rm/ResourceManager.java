@@ -2,17 +2,21 @@ package resourcemanager.system.peer.rm;
 
 import common.configuration.RmConfiguration;
 import common.peer.AvailableResources;
-import common.simulation.RequestResource;
+import common.simulation.Job;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import cyclon.system.peer.cyclon.PeerDescriptor;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +51,9 @@ public final class ResourceManager extends ComponentDefinition {
     private Address self;
     private RmConfiguration configuration;
     Random random;
+    
+    private static final int NUM_PROBES = 2;
+    
     private AvailableResources availableResources;
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -105,19 +112,27 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
-
+    /**
+     *  This is the handler that handles incoming ResourceAllocationRequests from other Peers.
+     */
     Handler<RequestResources.Request> handleResourceAllocationRequest = new Handler<RequestResources.Request>() {
         @Override
         public void handle(RequestResources.Request event) {
-            // TODO 
+            
+        	
         }
     };
+    
+    /**
+     *  This is the handler that handles incoming Responses to ResourceAllocationRequests from other Peers.
+     */
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
             // TODO 
         }
     };
+    
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
@@ -130,18 +145,30 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 	
-    Handler<RequestResource> handleRequestResource = new Handler<RequestResource>() {
+    /**
+     *  This is the handler that handles incoming Jobs from Client Apps.
+     */
+    Handler<Job> handleRequestResource = new Handler<Job>() {
         @Override
-        public void handle(RequestResource event) {
+        public void handle(Job event) {
             
             System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
             // TODO: Ask for resources from neighbours
-            // by sending a ResourceRequest
-//            RequestResources.Request req = new RequestResources.Request(self, dest,
-//            event.getNumCpus(), event.getAmountMem());
-//            trigger(req, networkPort);
+            List<Address> copyNeighbourList = new ArrayList<Address>();
+            copyNeighbourList.addAll(neighbours);
+            int times = Math.min(NUM_PROBES, neighbours.size());
+            for(int i=0; i< times; i++){
+            	int index = (int) Math.round(Math.random()*copyNeighbourList.size());
+            	while(copyNeighbourList.contains(copyNeighbourList.get(index))){
+            		index = (int) Math.round(Math.random()*copyNeighbourList.size());
+            	}
+            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getNumCpus(), event.getMemoryInMbs());
+            	copyNeighbourList.remove(copyNeighbourList.get(index));
+            	trigger(req, networkPort);     	
+            }
         }
     };
+    
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {

@@ -1,8 +1,8 @@
 package system.peer;
 
-import common.simulation.RequestResource;
+import common.simulation.Job;
 import se.sics.kompics.PortType;
 
 public class RmPort extends PortType {{
-	positive(RequestResource.class);
+	positive(Job.class);
 }}
