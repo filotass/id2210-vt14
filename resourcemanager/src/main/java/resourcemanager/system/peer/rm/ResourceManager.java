@@ -52,6 +52,7 @@ public final class ResourceManager extends ComponentDefinition {
     private RmConfiguration configuration;
     Random random;
     
+    
     private static final int NUM_PROBES = 2;
     
     private AvailableResources availableResources;
@@ -86,7 +87,6 @@ public final class ResourceManager extends ComponentDefinition {
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
             long period = configuration.getPeriod();
-            availableResources = init.getAvailableResources();
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateTimeout(rst));
             trigger(rst, timerPort);
@@ -118,8 +118,10 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Request> handleResourceAllocationRequest = new Handler<RequestResources.Request>() {
         @Override
         public void handle(RequestResources.Request event) {
-            
-        	
+        	System.out.println("Request incoming for job with id = "+ event.getJobID());
+        	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
+        				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
+        	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval),networkPort);
         }
     };
     
@@ -129,7 +131,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
-            // TODO 
+            System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
         }
     };
     
@@ -158,12 +160,9 @@ public final class ResourceManager extends ComponentDefinition {
             copyNeighbourList.addAll(neighbours);
             int times = Math.min(NUM_PROBES, neighbours.size());
             for(int i=0; i< times; i++){
-            	int index = (int) Math.round(Math.random()*copyNeighbourList.size());
-            	while(copyNeighbourList.contains(copyNeighbourList.get(index))){
-            		index = (int) Math.round(Math.random()*copyNeighbourList.size());
-            	}
-            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getNumCpus(), event.getMemoryInMbs());
-            	copyNeighbourList.remove(copyNeighbourList.get(index));
+            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
+            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
+            	copyNeighbourList.remove(index);
             	trigger(req, networkPort);     	
             }
         }
