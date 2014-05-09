@@ -1,6 +1,9 @@
 package resourcemanager.system.peer.rm;
 
 import java.util.List;
+
+import common.simulation.Job;
+
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -38,15 +41,17 @@ public class RequestResources  {
 
     }
     
-    public static class Response extends Message {
+    public static class Response extends Message implements Comparable<Response>{
 
+    	private final int numOfJobsInQueue;
         private final boolean success;
     	private final long jobID;
         
-        public Response(Address source, Address destination, long jobID, boolean success) {
+        public Response(Address source, Address destination, long jobID, boolean success, int numOfJobsInQueue) {
             super(source, destination);
             this.jobID = jobID;
             this.success = success;
+            this.numOfJobsInQueue = numOfJobsInQueue;
         }
         
         public boolean isSuccessful(){
@@ -56,6 +61,22 @@ public class RequestResources  {
         public long getJobID(){
         	return jobID;
         }
+        
+        
+        public long getNumOfJobsInQueue(){
+        	return numOfJobsInQueue;
+        }
+
+		@Override
+		public int compareTo(Response other) {
+			if(this.numOfJobsInQueue == other.numOfJobsInQueue){
+				if(success){
+					return -1;
+				}
+				return 1;
+			}
+			return this.numOfJobsInQueue - other.numOfJobsInQueue;
+		}
     }
     
     public static class RequestTimeout extends Timeout {
@@ -68,5 +89,19 @@ public class RequestResources  {
         public Address getDestination() {
             return destination;
         }
+    }
+    
+    public static class ScheduleJob extends Message{
+    	private final Job job;
+    	
+		public ScheduleJob(Address source, Address destination, Job job) {
+			super(source, destination);
+			this.job = job;
+		}
+		
+		public Job getJob(){
+			return job;
+		}
+    	
     }
 }

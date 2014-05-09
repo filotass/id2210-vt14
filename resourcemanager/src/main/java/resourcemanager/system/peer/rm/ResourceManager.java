@@ -11,11 +11,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +50,8 @@ public final class ResourceManager extends ComponentDefinition {
     private RmConfiguration configuration;
     Random random;
     
+    private List<Job> queuedJobs = new ArrayList<Job>(); 
+    private Map<Long,List<RequestResources.Response>> probesReceived = new HashMap<Long, List<RequestResources.Response>>();
     
     private static final int NUM_PROBES = 2;
     
@@ -76,6 +76,7 @@ public final class ResourceManager extends ComponentDefinition {
         subscribe(handleUpdateTimeout, timerPort);
         subscribe(handleResourceAllocationRequest, networkPort);
         subscribe(handleResourceAllocationResponse, networkPort);
+        subscribe(handleIncomingJob, networkPort);
         subscribe(handleTManSample, tmanPort);
     }
 	
@@ -121,7 +122,7 @@ public final class ResourceManager extends ComponentDefinition {
         	System.out.println("Request incoming for job with id = "+ event.getJobID());
         	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
         				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
-        	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval),networkPort);
+        	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval,queuedJobs.size()),networkPort);
         }
     };
     
@@ -132,6 +133,18 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Response event) {
             System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
+            List<RequestResources.Response>  list =  probesReceived.get(event.getJobID());
+            if(list==null){
+            	list = new ArrayList<RequestResources.Response>();
+            	probesReceived.put(event.getJobID(), list);
+            }
+            list.add(event);
+            
+            if(list.size()== NUM_PROBES){
+            	RequestResources.Response minLoadResponse = Collections.min(list);
+            	Address selectedPeer = minLoadResponse.getSource();
+            	
+            }
         }
     };
     
@@ -168,11 +181,31 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
     
+    Handler<RequestResources.ScheduleJob> handleIncomingJob = new Handler<RequestResources.ScheduleJob>() {
+        @Override
+        public void handle(RequestResources.ScheduleJob event) {
+        	Job job = event.getJob();
+        	if(queuedJobs.size()>0){
+        		queuedJobs.add(job);
+        	}else if(availableResources.isAvailable(job.getNumCpus(), job.getMemoryInMbs())){
+        		availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
+        		//TODO SET TIMEOUT FOR THE JOB
+        	}else{
+        		queuedJobs.add(job);
+        	}
+        }
+    };
+    
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
             // TODO: 
         }
     };
+    
+    private boolean doesJobFit(Job job){
+    	return (availableResources.getFreeMemInMbs()>= job.getMemoryInMbs()) && 
+		   (availableResources.getNumFreeCpus() >= job.getNumCpus());
+    }
 
 }
