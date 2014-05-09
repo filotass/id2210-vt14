@@ -1,5 +1,7 @@
 package common.simulation;
 
+import java.io.Serializable;
+
 import se.sics.kompics.Event;
 
 /**
@@ -8,9 +10,11 @@ import se.sics.kompics.Event;
  * @author filotas
  *
  */
-public final class Job extends Event {
+public final class Job extends Event implements Serializable{
     
-    private final long id;
+
+	private static final long serialVersionUID = 8582787369387642620L;
+	private final long id;
     private final int numCpus;
     private final int memoryInMbs;
     private final int timeToHoldResource;
