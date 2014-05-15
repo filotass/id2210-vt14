@@ -14,19 +14,22 @@ public final class RmConfiguration {
     private final int numPartitions;
     private final int maxNumRoutingEntries;
     private final long seed;
+    private final int probesPerJob;
 
     public RmConfiguration(long seed) {
         this.period = 2*1000;
         this.numPartitions = 10;
         this.maxNumRoutingEntries = 20;
         this.seed = seed;
+        this.probesPerJob = 2;
     }
     
-    public RmConfiguration(long period, int numPartitions, int maxNumRoutingEntries, long seed) {
+    public RmConfiguration(long period, int numPartitions, int maxNumRoutingEntries, long seed, int probesPerJob) {
         this.period = period;
         this.numPartitions = numPartitions;
         this.maxNumRoutingEntries = maxNumRoutingEntries;
         this.seed = seed;
+        this.probesPerJob = probesPerJob;
     }
 
     public long getPeriod() {
@@ -43,6 +46,10 @@ public final class RmConfiguration {
 
     public long getSeed() {
         return seed;
+    }
+    
+    public int getProbesPerJob() {
+    	return probesPerJob;
     }
     
     public void store(String file) throws IOException {
@@ -65,7 +72,8 @@ public final class RmConfiguration {
         int numPartitions = Integer.parseInt(p.getProperty("numPartitions"));
         int maxNumRoutingEntries = Integer.parseInt(p.getProperty("maxNumRoutingEntries"));
         long seed = Long.parseLong(p.getProperty("seed"));
+        int probesPerJob = Integer.parseInt(p.getProperty("probesPerJob"));
 
-        return new RmConfiguration(period, numPartitions, maxNumRoutingEntries, seed);
+        return new RmConfiguration(period, numPartitions, maxNumRoutingEntries, seed, probesPerJob);
     }
 }

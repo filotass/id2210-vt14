@@ -82,7 +82,7 @@ public final class ResourceManager extends ComponentDefinition {
      * Number of Probes sent for each Job. Increasing the number of probes may have better accuracy but it increases the 
      * risk that the last probe will have greater latency (tail-sensitive).
      */
-    private static final int NUM_PROBES = 2;
+    private static int NUM_PROBES;
     
     /**
      * Used for role of Worker. 
@@ -118,6 +118,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RmInit init) {
             self = init.getSelf();
+            NUM_PROBES = configuration.getProbesPerJob();
             configuration = init.getConfiguration();
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
@@ -270,7 +271,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
-            // TODO: 
+           System.err.println("It fucking works. Fuck yeah!");
         }
     };
 }

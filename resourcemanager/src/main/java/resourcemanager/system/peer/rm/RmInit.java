@@ -10,6 +10,7 @@ public final class RmInit extends Init {
     private final Address peerSelf;
     private final RmConfiguration configuration;
     private final AvailableResources availableResources;
+    
 
     public RmInit(Address peerSelf, RmConfiguration configuration,
             AvailableResources availableResources) {
@@ -17,7 +18,6 @@ public final class RmInit extends Init {
         this.peerSelf = peerSelf;
         this.configuration = configuration;
         this.availableResources = availableResources;
-
     }
 
     public AvailableResources getAvailableResources() {
