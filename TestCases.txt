@@ -1,0 +1,25 @@
+Sparrow 1:
+
+	What to change:
+		Total_Number_of_nodes x (100, 1.000, 10.000, 100.000)
+		Num_of_probes_per_Job x (1, 2, 3, 5)
+		Total_Num_of_Jobs x (1.000 , 10.000, 100.000, 1.000.000, 10.000.000)
+
+
+	What to log:
+		The timestamp of the request of scheduling the job by sender.
+		The timestamp of the actual scheduling of the job.
+		The timesamp upon completion of the job.
+
+	What to aggregate and measure from logs:
+		Waiting Time per job
+		Running Time per job
+		Total Time = Waiting + Running
+		
+		Averages of the above.
+		99% of the above.
+
+
+Sparrow Advanced:
+
+Test exactly the same things so we can Compare & Contrast (Benchmarking).
