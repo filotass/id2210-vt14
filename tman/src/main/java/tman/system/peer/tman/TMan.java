@@ -102,7 +102,8 @@ public final class TMan extends ComponentDefinition {
         public void handle(CyclonSample event) {
             List<Address> cyclonPartners = event.getSample();
 
-            // merge cyclonPartners into TManPartners
+            System.err.println("It works!");
+           
 
             tmanPartners.addAll(cyclonPartners);
             Utils.removeDuplicates(tmanPartners);

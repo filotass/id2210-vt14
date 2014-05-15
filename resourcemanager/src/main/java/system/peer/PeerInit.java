@@ -2,6 +2,7 @@ package system.peer;
 
 import common.configuration.RmConfiguration;
 import common.configuration.CyclonConfiguration;
+import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
 import se.sics.kompics.Init;
 import se.sics.kompics.address.Address;
@@ -14,9 +15,10 @@ public final class PeerInit extends Init {
     private final CyclonConfiguration cyclonConfiguration;
     private final RmConfiguration applicationConfiguration;
     private final AvailableResources availableResources;
+    private final TManConfiguration tmanConfiguration;
 
     public PeerInit(Address peerSelf, BootstrapConfiguration bootstrapConfiguration,
-            CyclonConfiguration cyclonConfiguration, RmConfiguration applicationConfiguration,
+            CyclonConfiguration cyclonConfiguration, RmConfiguration applicationConfiguration, TManConfiguration tManConfiguration,
             AvailableResources availableResources) {
         super();
         this.peerSelf = peerSelf;
@@ -24,6 +26,7 @@ public final class PeerInit extends Init {
         this.cyclonConfiguration = cyclonConfiguration;
         this.applicationConfiguration = applicationConfiguration;
         this.availableResources = availableResources;
+        this.tmanConfiguration = tManConfiguration;
 
     }
 
@@ -47,5 +50,11 @@ public final class PeerInit extends Init {
     public RmConfiguration getApplicationConfiguration() {
         return this.applicationConfiguration;
     }
+    
+    public TManConfiguration getTManConfiguration() {
+        return this.tmanConfiguration;
+    }
+    
+    
 
 }
