@@ -8,10 +8,10 @@ data Setting = Setting {
    }
 
 instance Show Setting where
-   show setting = "OUTFILE: output"    ++ (show (theId setting))  ++".out\n"++
-                  "NUMBER_OF_PROBES: " ++ (show (probes setting)) ++"\n"    ++
-                  "NUMBER_OF_NODES: "  ++ (show (nodes setting))  ++"\n"    ++
-                  "NUMBER_OF_JOBS: "   ++ (show (jobs setting))
+   show setting = "OUTFILE:output"    ++ (show (theId setting))  ++".out\n"++
+                  "NUMBER_OF_PROBES:" ++ (show (probes setting)) ++"\n"    ++
+                  "NUMBER_OF_NODES:"  ++ (show (nodes setting))  ++"\n"    ++
+                  "NUMBER_OF_JOBS:"   ++ (show (jobs setting))
 {-
    Print all combinations for the setting variables
    probes, nodes, jobs and their ID.
