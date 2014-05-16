@@ -25,4 +25,4 @@ main = do let numberOfProbes = [1,2,3,5,10]
                                                  job<-numberOfJobs]
               idcomb         = [Setting theId probe node job
                                | (theId,(probe,node,job)) <- zip [1..] combinations]
-          forM_ idcomb (\x->putStrLn $ show x)
+          forM_ idcomb (putStrLn . show)
