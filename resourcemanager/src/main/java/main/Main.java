@@ -1,14 +1,11 @@
 package main;
 
-import java.util.ArrayList;
-
 import simulator.core.DataCenterSimulationMain;
 import common.configuration.Configuration;
 import common.simulation.scenarios.ConfFileHandler;
 import common.simulation.scenarios.Experiment;
 import common.simulation.scenarios.Scenario;
 import common.simulation.scenarios.Scenario1;
-
 
 public class Main {
 	
@@ -28,7 +25,6 @@ public class Main {
         //NOTHING RUNS AFTER THIS POINT - BELOW IS THE BLACK HOLE
         
         System.err.println("JAVLA SKIT");
-
   
   }
 }
