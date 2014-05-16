@@ -25,5 +25,5 @@ main = do let numberOfProbes = [1,2,3,5,10]
                                                  job<-numberOfJobs]
               idcomb         = [Setting theId probe node job
                                | (theId,(probe,node,job)) <- zip [1..] combinations]
-              fileName       = "resourcemanager/settingfiles/output"
-          forM_ idcomb $ \x->writeFile (fileName++(show . theId) x++".out") (show x)
+              fileName       = "resourcemanager/settingfiles/input"
+          forM_ idcomb $ \x->writeFile (fileName++(show . theId) x++".conf") (show x)
