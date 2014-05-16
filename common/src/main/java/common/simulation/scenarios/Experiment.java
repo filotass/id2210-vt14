@@ -1,14 +1,20 @@
-package resourcemanager.system.peer.rm;
+package common.simulation.scenarios;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Experiment {
+public class Experiment implements Serializable{
 	
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7290526136887511211L;
 	public static final String OUTFILE = "OUTFILE";
-	public static final String NUM_OF_PROBES = "NUM_OF_PROBES";
-	public static final String NUM_OF_NODES = "NUM_OF_NODES";
-	public static final String NUM_OF_JOBS = "NUM_OF_JOBS";
+	public static final String NUM_OF_PROBES = "NUMBER_OF_PROBES";
+	public static final String NUM_OF_NODES = "NUMBER_OF_NODES";
+	public static final String NUM_OF_JOBS = "NUMBER_OF_JOBS";
 
 	private Map<String,String> parameters = new HashMap<String,String>();
 	
