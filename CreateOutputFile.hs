@@ -20,12 +20,9 @@ main :: IO ()
 main = do let numberOfProbes = [1,2,3,5,10]
               numberOfNodes  = [100,1000,10000,100000]
               numberOfJobs   = [1000,10000,100000,1000000,10000000]
-              combinations   = [[probe,node,job]|probe<-numberOfProbes,
+              combinations   = [(probe,node,job)|probe<-numberOfProbes,
                                                  node<-numberOfNodes,
                                                  job<-numberOfJobs]
-              idcomb         = [Setting (fst combination) 
-                                        ((snd combination) !! 0)
-                                        ((snd combination) !! 1)
-                                        ((snd combination) !! 2)
-                                | combination<-(zip [1..] combinations)]
+              idcomb         = [Setting theId probe node job
+                               | (theId,(probe,node,job)) <- zip [1..] combinations]
           forM_ idcomb (\x->putStrLn $ show x)
