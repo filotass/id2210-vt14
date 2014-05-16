@@ -52,5 +52,6 @@ public class Configuration {
         c = File.createTempFile("rm.", ".conf").getAbsolutePath();
         searchConfiguration.store(c);
         System.setProperty("rm.configuration", c);
+
     }
 }

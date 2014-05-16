@@ -118,8 +118,8 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RmInit init) {
             self = init.getSelf();
-            NUM_PROBES = configuration.getProbesPerJob();
             configuration = init.getConfiguration();
+            NUM_PROBES = configuration.getProbesPerJob();
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
             long period = configuration.getPeriod();

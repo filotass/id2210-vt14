@@ -1,5 +1,9 @@
 package main;
 
+import java.util.ArrayList;
+
+import resourcemanager.system.peer.rm.ConfFileHandler;
+import resourcemanager.system.peer.rm.Experiment;
 import simulator.core.DataCenterSimulationMain;
 import common.configuration.Configuration;
 import common.simulation.scenarios.Scenario;
@@ -12,8 +16,14 @@ public class Main {
         long seed = System.currentTimeMillis();
         Configuration configuration = new Configuration(seed);
 
-        Scenario scenario = new Scenario1();
+        ArrayList<Experiment> experiments = ConfFileHandler.fileToExperiments("Setting.txt",4);
+        
+        for(Experiment e : experiments){
+        	System.out.println(e);
+        }
+        
+        /*Scenario scenario = new Scenario1();
         scenario.setSeed(seed);
-        scenario.getScenario().simulate(DataCenterSimulationMain.class);
+        scenario.getScenario().simulate(DataCenterSimulationMain.class);*/
     }
 }

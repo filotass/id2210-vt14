@@ -58,6 +58,7 @@ public final class RmConfiguration {
         p.setProperty("numPartitions", "" + numPartitions);
         p.setProperty("maxNumRoutingEntries", "" + maxNumRoutingEntries);
         p.setProperty("seed", "" + seed);
+        p.setProperty("probesPerJob", ""+probesPerJob);
 
         Writer writer = new FileWriter(file);
         p.store(writer, "se.sics.kompics.p2p.overlay.application");
