@@ -1,6 +1,7 @@
 package simulator.core;
 
 import common.simulation.SimulatorPort;
+
 import java.util.HashMap;
 
 import se.sics.kompics.ChannelFilter;
@@ -16,7 +17,6 @@ import se.sics.kompics.network.Network;
 import se.sics.kompics.p2p.bootstrap.BootstrapConfiguration;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.Timer;
-
 import system.peer.Peer;
 import system.peer.PeerInit;
 import simulator.snapshot.Snapshot;
@@ -31,8 +31,10 @@ import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
 import common.simulation.Job;
 import common.simulation.SimulatorInit;
+
 import java.net.InetAddress;
 import java.util.Random;
+
 import se.sics.ipasdistances.AsIpGenerator;
 import system.peer.RmPort;
 import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
@@ -142,6 +144,7 @@ public final class DataCenterSimulator extends ComponentDefinition {
     Handler<GenerateReport> handleGenerateReport = new Handler<GenerateReport>() {
         @Override
         public void handle(GenerateReport event) {
+        	
             Snapshot.report();
         }
     };

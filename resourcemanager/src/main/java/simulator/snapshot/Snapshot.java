@@ -1,7 +1,7 @@
 package simulator.snapshot;
 
 import common.peer.AvailableResources;
-import common.simulation.scenarios.Scenario1;
+
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
