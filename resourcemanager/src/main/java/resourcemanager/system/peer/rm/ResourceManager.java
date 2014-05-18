@@ -28,6 +28,7 @@ import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
+import simulator.snapshot.Snapshot;
 import system.peer.RmPort;
 import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
@@ -166,7 +167,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<Job> handleRequestResource = new Handler<Job>() {
         @Override
         public void handle(Job event) {
-            
+            Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
             System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
             List<Address> copyNeighbourList = new ArrayList<Address>();
@@ -237,6 +238,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
         	Job job = event.getJob();
+        	Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
         	if(queuedJobs.size()>0){
         		queuedJobs.add(job);
         	}else if(availableResources.isAvailable(job.getNumCpus(), job.getMemoryInMbs())){
@@ -247,6 +249,8 @@ public final class ResourceManager extends ComponentDefinition {
                 trigger(st, timerPort);
         	}else{
         		queuedJobs.add(job);
+//        		System.err.println("Job cannot run in this machine!! Not enough resources");
+//        		System.exit(1);
         	}
         }
     };
@@ -258,10 +262,16 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<JobFinishedTimeout> handleJobFinishedTimeout = new Handler<JobFinishedTimeout>() {
         @Override
         public void handle(JobFinishedTimeout event) {
+        	Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         	for(Job job: queuedJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
         			queuedJobs.remove(job);
+        			if(queuedJobs.size()>0){
+        				ScheduleTimeout st = new ScheduleTimeout(queuedJobs.get(0).getTimeToHoldResource());
+                		st.setTimeoutEvent(new JobFinishedTimeout(st,queuedJobs.get(0).getId()));
+                        trigger(st, timerPort);
+        			}
         			break;
         		}
         	}

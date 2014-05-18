@@ -14,6 +14,10 @@ public class Snapshot {
             new ConcurrentHashMap<Address, PeerInfo>();
     private static int counter = 0;
     public static final String FOLDER = "outputfiles/";
+    public static final String S = " ";
+    public static final String INI = "INI";
+    public static final String SCH = "SCH";
+    public static final String TER = "TER";
     
     public static void init(int numOfStripes) {
         FileIO.write("", FOLDER+System.getProperty(Experiment.OUTFILE));
@@ -47,6 +51,10 @@ public class Snapshot {
        
         System.out.println(str);
         FileIO.append(str, FOLDER+System.getProperty(Experiment.OUTFILE));
+    }
+    
+    public static void report(String whatToReport){
+    	FileIO.append(whatToReport+ "\n", FOLDER+System.getProperty(Experiment.OUTFILE));
     }
 
 
