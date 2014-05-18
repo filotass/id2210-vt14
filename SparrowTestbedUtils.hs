@@ -83,7 +83,6 @@ performOutputParsing readFrom writeTo = do
        ls       = sort $ M.toList theMap
    -- perform calculations, get a big string back and write this
    -- string to the given statistics file
-   putStrLn (show ls)
    writeFileLine (writeTo++(takeFileName readFrom))
                  (calculations ls)
                  WriteMode
@@ -98,14 +97,14 @@ getTs (cmd,timestamp) = timestamp
 
 {- Get averages and 99th percentile as a String -}
 averages :: [(JobId,[Measure])] -> String
-averages ls = "Probing average time" ++ probingAvg  ++ "\n" ++
-              "Probing 99th p  time" ++ probing99   ++ "\n" ++
-              "Waiting average time" ++ waitingAvg  ++ "\n" ++
-              "Waiting 99th p  time" ++ waiting99   ++ "\n" ++
-              "Running average time" ++ runningAvg  ++ "\n" ++
-              "Running 99th p  time" ++ running99   ++ "\n" ++
-              "Total   average time" ++ totalAvg    ++ "\n" ++
-              "Total   99th p  time" ++ total99     ++ "\n"
+averages ls = "Probing average time " ++ probingAvg  ++ "\n" ++
+              "Probing 99th p  time " ++ probing99   ++ "\n" ++
+              "Waiting average time " ++ waitingAvg  ++ "\n" ++
+              "Waiting 99th p  time " ++ waiting99   ++ "\n" ++
+              "Running average time " ++ runningAvg  ++ "\n" ++
+              "Running 99th p  time " ++ running99   ++ "\n" ++
+              "Total   average time " ++ totalAvg    ++ "\n" ++
+              "Total   99th p  time " ++ total99     ++ "\n"
    where probing99  = show $ get99Percentile probing
          waiting99  = show $ get99Percentile waiting
          running99  = show $ get99Percentile running
@@ -116,8 +115,8 @@ averages ls = "Probing average time" ++ probingAvg  ++ "\n" ++
          totalAvg   = show $ getAverage total
          probing    = getTimesFor "PRB" "INI" ls
          waiting    = getTimesFor "SCH" "PRB" ls
-         running    = getTimesFor "TRM" "SCH" ls
-         total      = getTimesFor "TRM" "INI" ls
+         running    = getTimesFor "TER" "SCH" ls
+         total      = getTimesFor "TER" "INI" ls
 
 {- For a list of times, calculate average -}
 getAverage :: [TimeStamp] -> TimeStamp
