@@ -18,6 +18,10 @@ data Setting = Setting
   , jobs      :: Integer
   }
 
+-- list the commands
+data Command = PRB | INI | TER | SCH
+   deriving (Show,Read,Ord,Eq)
+
 {- toString definition for Setting -}
 instance Show Setting where
    show setting = "OUTFILE:output"    ++ (show (theId setting))  ++".out\n"++
@@ -27,7 +31,6 @@ instance Show Setting where
 
 -- used for saving id [(cmd,time)]
 type TimeStamp  = Integer
-type Command    = String
 type JobId      = Integer
 type Output     = M.Map Integer [Measure]
 type Measure    = (Command, TimeStamp)
@@ -83,13 +86,9 @@ performOutputParsing readFrom writeTo = do
        ls       = sort $ M.toList theMap
    -- perform calculations, get a big string back and write this
    -- string to the given statistics file
-   writeFileLine (writeTo++(takeFileName readFrom))
-                 (calculations ls)
-                 WriteMode
-   -- write the average files
-   writeFileLine (writeTo++"__averages__"++(takeFileName readFrom))
-                 (averages ls)
-                 WriteMode
+   forM_ [(calculations ls,writeTo++(takeFileName readFrom)),
+          (averages ls, writeTo++"__averages__"++(takeFileName readFrom))]
+         (\(theList,theMsg) -> writeFileLine theMsg theList WriteMode)
 
 {- Helper function for getting timeStamp from a Measure -}
 getTs :: Measure -> TimeStamp
@@ -97,34 +96,22 @@ getTs (cmd,timestamp) = timestamp
 
 {- Get averages and 99th percentile as a String -}
 averages :: [(JobId,[Measure])] -> String
-averages ls = "Probing average time " ++ probingAvg  ++ "\n" ++
-              "Probing 99th p  time " ++ probing99   ++ "\n" ++
-              "Waiting average time " ++ waitingAvg  ++ "\n" ++
-              "Waiting 99th p  time " ++ waiting99   ++ "\n" ++
-              "Running average time " ++ runningAvg  ++ "\n" ++
-              "Running 99th p  time " ++ running99   ++ "\n" ++
-              "Total   average time " ++ totalAvg    ++ "\n" ++
-              "Total   99th p  time " ++ total99     ++ "\n"
-   where probing99  = show $ get99Percentile probing
-         waiting99  = show $ get99Percentile waiting
-         running99  = show $ get99Percentile running
-         total99    = show $ get99Percentile total
-         probingAvg = show $ getAverage probing
-         waitingAvg = show $ getAverage waiting
-         runningAvg = show $ getAverage running
-         totalAvg   = show $ getAverage total
-         probing    = getTimesFor "PRB" "INI" ls
-         waiting    = getTimesFor "SCH" "PRB" ls
-         running    = getTimesFor "TER" "SCH" ls
-         total      = getTimesFor "TER" "INI" ls
+averages ls =
+   concat [label++" averages time " ++ (show $ getAvg times) ++ "\n" ++
+           label++" 99th p   time " ++ (show $ get99P times) ++ "\n"
+          | (label,times) <- combs]
+   where combs = [("Probing",getTimesFor PRB INI ls),
+                  ("Waiting",getTimesFor SCH PRB ls),
+                  ("Running",getTimesFor TER SCH ls),
+                  ("Total"  ,getTimesFor TER INI ls)]
 
 {- For a list of times, calculate average -}
-getAverage :: [TimeStamp] -> TimeStamp
-getAverage ls = div (sum ls) (toInteger $ length ls)
+getAvg :: [TimeStamp] -> TimeStamp
+getAvg ls = div (sum ls) (toInteger $ length ls)
 
 {- For a list of times, calculate 99th percentile -}
-get99Percentile :: [TimeStamp] -> TimeStamp
-get99Percentile ls = div (sum percent99) (toInteger $ length percent99)
+get99P :: [TimeStamp] -> TimeStamp
+get99P ls = div (sum percent99) (toInteger $ length percent99)
    where percent99 = take (round (len*0.99)) ls
          len       = fromIntegral $ length (sort ls)
 
@@ -134,8 +121,8 @@ get99Percentile ls = div (sum percent99) (toInteger $ length percent99)
 -}
 getTimesFor :: Command -> Command -> [(JobId,[Measure])] -> [TimeStamp]
 getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
-   where a = [(fromJust $ getMeasure c1 measures, fromJust $ getMeasure c2 measures)
-             |(_,measures)<-ls]
+   where a = [(fromJust $ getMeasure c1 meas, fromJust $ getMeasure c2 meas)
+             |(_,meas)<-ls]
 
 {- Here we can perform the calculations needed, and then format it all as
    a string
@@ -144,25 +131,24 @@ getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
 -}
 calculations :: [(JobId,[Measure])] -> String
 calculations [] = ""
-calculations ((jobId,commandLs):xs) = line ++ "\n" ++ calculations xs
-   where line    = (show jobId)++","++probing++","++waiting++","++running++","++total
-         probing = case (isJust prb && isJust ini) of
-                      True  -> show $ (getTs (fromJust prb)) - (getTs (fromJust ini))
-                      False -> "error_no_prb_or_ini"
-         waiting = case (isJust sch && isJust prb) of
-                      True  -> show $ (getTs (fromJust sch)) - (getTs (fromJust prb))
-                      False -> "error_no_sch_or_prb"
-         running = case (isJust trm && isJust sch) of
-                      True  -> show $ (getTs (fromJust trm)) - (getTs (fromJust sch))
-                      False -> "error_no_trm_or_sch"
-         total   = case (isJust trm && isJust ini) of
-                      True  -> show $ (getTs (fromJust trm)) - (getTs (fromJust ini))
-                      False -> "error_no_trm_or_ini"
-         ini     = getMeasure "INI" commandLs
-         trm     = getMeasure "TER" commandLs
-         sch     = getMeasure "SCH" commandLs
-         prb     = getMeasure "PRB" commandLs
+calculations ((jobId,commandLs):xs) =
+   (show jobId)++","++
+   (safeCalcMeasure PRB INI commandLs)++"," ++  -- probing
+   (safeCalcMeasure SCH PRB commandLs)++"," ++  -- waiting
+   (safeCalcMeasure TER SCH commandLs)++"," ++  -- running
+   (safeCalcMeasure TER INI commandLs)++"\n"++  -- total
+   calculations xs
 
+{- take 2 commands and return command1 minus command2 as String -}
+safeCalcMeasure :: Command -> Command -> [Measure] -> String
+safeCalcMeasure cmd1 cmd2 commandLs =
+   case (isJust m1 && isJust m2) of
+      True  -> show $ (getTs (fromJust m1)) - (getTs (fromJust m2))
+      False -> "error_command_not_found"
+   where m1 = getMeasure cmd1 commandLs
+         m2 = getMeasure cmd2 commandLs
+
+{- try to pick from Just, in a safe manner... If not found return nothing -}
 getMeasure :: Command -> [Measure] -> Maybe Measure
 getMeasure _ []                                      = Nothing
 getMeasure cmd (measure@(inCmd,_):xs) | cmd == inCmd = Just measure
@@ -173,8 +159,9 @@ getMeasure cmd (measure@(inCmd,_):xs) | cmd == inCmd = Just measure
    Expects the format of three words on a line separated by space
 -}
 parseLine :: String -> OutputLine
-parseLine inp = (read jobId::JobId,(command,read timest::TimeStamp))
-   where [command,jobId,timest] = words inp
+parseLine inp =
+   (read jobId::JobId,(read command::Command,read timest::TimeStamp))
+      where [command,jobId,timest] = words inp
          
 {- add one item to the output hashmap
    fst line is the jobId, snd line are the measures for the outputline
