@@ -5,6 +5,7 @@ import qualified Data.Map as M
 import System.Directory   (getDirectoryContents)
 import System.Environment (getArgs)
 import System.IO
+import System.FilePath.Posix    (takeFileName)
 
 {-- Used for storing information for the input.conf files --}
 data Setting = Setting
@@ -42,7 +43,7 @@ main = do
       _  -> do outputFiles <- getDirectoryContents (head args)
                let skipFiles = [".","..",".DS_Store"]
                forM_ [(head args)++o|o<-outputFiles,not $ elem o skipFiles]
-                     ((flip performOutputParsing) "appendfile.txt")
+                     ((flip performOutputParsing) "resourcemanager/statistics/")
                
 {- Generate combinations needed to test and write all files to disk -}
 createSettingFiles :: IO ()
@@ -78,7 +79,9 @@ performOutputParsing readFrom writeTo = do
    -- TODO: Here we can make various calculations from the hash map
    putStrLn $ show theMap
    -- 99th percentile
-   writeFileLine writeTo "test todo fill in read content" AppendMode
+   writeFileLine (writeTo++(takeFileName readFrom))
+                 ("test todo fill in read content")
+                 AppendMode
 
 {- for a line from any output file (from kompics) take the 
    info we need and put it in an OutputLine tuple.
