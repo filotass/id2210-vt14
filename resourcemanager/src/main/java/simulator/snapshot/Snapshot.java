@@ -1,7 +1,7 @@
 package simulator.snapshot;
 
 import common.peer.AvailableResources;
-
+import common.simulation.scenarios.Experiment;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,24 +13,19 @@ public class Snapshot {
     private static ConcurrentHashMap<Address, PeerInfo> peers = 
             new ConcurrentHashMap<Address, PeerInfo>();
     private static int counter = 0;
-    private static String FILENAME = "search.out";
-
-
+    public static final String FOLDER = "outputfiles/";
+    
     public static void init(int numOfStripes) {
-        FileIO.write("", FILENAME);
+        FileIO.write("", FOLDER+System.getProperty(Experiment.OUTFILE));
     }
-
 
     public static void addPeer(Address address, AvailableResources availableResources) {
         peers.put(address, new PeerInfo(availableResources));
     }
 
-
     public static void removePeer(Address address) {
         peers.remove(address);
     }
-
-
 
     public static void updateNeighbours(Address address, ArrayList<Address> partners) {
         PeerInfo peerInfo = peers.get(address);
@@ -51,7 +46,7 @@ public class Snapshot {
         str += "###\n";
        
         System.out.println(str);
-        FileIO.append(str, FILENAME);
+        FileIO.append(str, FOLDER+System.getProperty(Experiment.OUTFILE));
     }
 
 

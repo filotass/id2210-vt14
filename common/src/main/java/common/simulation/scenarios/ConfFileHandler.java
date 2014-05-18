@@ -1,6 +1,7 @@
 package common.simulation.scenarios;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -41,6 +42,21 @@ public class ConfFileHandler {
 		}
 		
 		return ex;
+	}
+	
+	public static void deleteFile(String filename){
+		try{
+			File file = new File(filename);
+			 
+			if(file.delete()){
+				System.out.println(file.getName() + " is deleted!");
+			}else{
+				System.out.println("Delete operation is failed.");
+			}
+	
+		}catch(Exception e){
+				e.printStackTrace();
+		}
 	}
 	
 

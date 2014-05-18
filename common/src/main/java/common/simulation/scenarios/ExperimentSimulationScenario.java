@@ -25,12 +25,11 @@ public class ExperimentSimulationScenario  extends SimulationScenario{
 	}};
 	
 	
-	public ExperimentSimulationScenario(final Experiment exp){
-		e =exp;
-		
+	public ExperimentSimulationScenario(){
+
 		process0 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(1000));
-			raise(Integer.valueOf(exp.getValue(Experiment.NUM_OF_NODES)), Operations.peerJoin(), 
+			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_NODES)), Operations.peerJoin(), 
 					uniform(0, Integer.MAX_VALUE), 
 					constant(8), constant(12000)
 					);
@@ -38,7 +37,7 @@ public class ExperimentSimulationScenario  extends SimulationScenario{
 		
 		process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(Integer.valueOf(exp.getValue(Experiment.NUM_OF_JOBS)), Operations.requestResources(), 
+			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestResources(), 
 				  uniform(0, Integer.MAX_VALUE),
 					constant(2), constant(2000),
 					constant(1000*60*1) // 1 minute
