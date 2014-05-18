@@ -67,7 +67,9 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Used for role of Worker. Queues Jobs that are assigned from Schedulers.
      */
-    private List<Job> queuedJobs = new ArrayList<Job>(); 
+    private List<Job> queuedJobs = new ArrayList<Job>();
+    
+    private List<Job> runningJobs = new ArrayList<Job>();
     
     /**
      * Used for role of Scheduler. Holds the Probe Responses per Job while probing the Peer Network.
@@ -243,31 +245,23 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResources.ScheduleJob event) {
         	Job job = event.getJob();
         	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
-        	System.out.print("QUEUE SIZE= "+ queuedJobs.size());
-        	if(queuedJobs.size()>0){
+
+        	if(!scheduleJob(job)){
         		queuedJobs.add(job);
-        	}else{
-        		queuedJobs.add(job);
-        		scheduleJob(job);
         	}
         }
     };
     
-    private void scheduleJob(Job job){
-    	if(availableResources.isAvailable(job.getNumCpus(), job.getMemoryInMbs())){
-    		availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
+    private boolean scheduleJob(Job job){
+    	boolean success = availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
+    	if(success){
+    		runningJobs.add(job);
     		Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
     		ScheduleTimeout st = new ScheduleTimeout(job.getTimeToHoldResource());
     		st.setTimeoutEvent(new JobFinishedTimeout(st,job.getId()));
     		trigger(st, timerPort);
-    	}else{
-    		System.out.println("Avail CPU=" + availableResources.getNumFreeCpus() +"Avail Mem="+availableResources.getFreeMemInMbs());
-    		System.out.println("Requi CPU=" + job.getNumCpus() +"Requi Mem="+job.getMemoryInMbs());
-    		queuedJobs.add(job);
-    		System.err.println("Job cannot run in this machine!! Not enough resources");
-    		System.exit(1);
     	}
-
+    	return success;
     }
     
     /**
@@ -277,14 +271,16 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<JobFinishedTimeout> handleJobFinishedTimeout = new Handler<JobFinishedTimeout>() {
         @Override
         public void handle(JobFinishedTimeout event) {
-        	for(Job job: queuedJobs){
+        	for(Job job: runningJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
         			Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
-        			queuedJobs.remove(job);
+        			runningJobs.remove(job);
         			if(queuedJobs.size()>0){
         				Job nextJob = queuedJobs.get(0);
-        				scheduleJob(nextJob);
+        				if(scheduleJob(nextJob)){
+        					queuedJobs.remove(nextJob);
+        				}
         			}
         			break;
         		}
