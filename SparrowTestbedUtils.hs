@@ -87,6 +87,9 @@ performOutputParsing readFrom writeTo = do
                  (calculations ls)
                  AppendMode
 
+getTs :: Measure -> TimeStamp
+getTs (cmd,timestamp) = timestamp
+
 {- Here we can perform the calculations needed, and then format it all as
    a string
 
@@ -95,21 +98,18 @@ performOutputParsing readFrom writeTo = do
 calculations :: [(JobId,[Measure])] -> String
 calculations [] = ""
 calculations ((jobId,commandLs):xs) = line ++ "\n" ++ calculations xs
-   where line    = (show jobId) ++ waiting ++ t2 ++ t3 ++ node
-         waiting = case (isJust ini && isJust trm) of
-                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
-                      False -> "error_no_ini_or_trm"
-         t2      = case (isJust ini && isJust trm) of
-                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
-                      False -> "error_no_ini_or_trm"
-         t3      = case (isJust ini && isJust trm) of
-                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
-                      False -> "error_no_ini_or_trm"
-         node    = case (isJust ini && isJust trm) of
-                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
-                      False -> "error_no_ini_or_trm"
+   where line    = (show jobId)++","++waiting++","++running++","++total
+         waiting = case (isJust sch && isJust ini) of
+                      True  -> show $ (getTs (fromJust sch)) - (getTs (fromJust ini))
+                      False -> "error_no_sch_or_ini"
+         running = case (isJust trm && isJust sch) of
+                      True  -> show $ (getTs (fromJust trm)) - (getTs (fromJust sch))
+                      False -> "error_no_trm_or_sch"
+         total   = case (isJust trm && isJust ini) of
+                      True  -> show $ (getTs (fromJust trm)) - (getTs (fromJust ini))
+                      False -> "error_no_trm_or_ini"
          ini     = getMeasure "INI" commandLs
-         trm     = getMeasure "TEM" commandLs
+         trm     = getMeasure "TER" commandLs
          sch     = getMeasure "SCH" commandLs
 
 getMeasure :: Command -> [Measure] -> Maybe Measure
