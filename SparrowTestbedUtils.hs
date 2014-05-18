@@ -1,11 +1,11 @@
 -- runhaskell SparrowTestbedUtils.hs resourcemanager/output/
 
-import Control.Monad      (forM_)
+import Control.Monad            (forM_)
 import Data.List
 import Data.Maybe
 import qualified Data.Map as M
-import System.Directory   (getDirectoryContents)
-import System.Environment (getArgs)
+import System.Directory         (getDirectoryContents)
+import System.Environment       (getArgs)
 import System.IO
 import System.FilePath.Posix    (takeFileName)
 
@@ -105,7 +105,7 @@ averages ls =
 
 {- For a list of times, calculate average -}
 getAvg :: [TimeStamp] -> TimeStamp
-getAvg ls = div (sum ls) (toInteger $ length ls)
+getAvg ls = div (sum ls) (toInteger $ length ls)
 
 {- For a list of times, calculate 99th percentile -}
 get99P :: [TimeStamp] -> TimeStamp
@@ -134,11 +134,10 @@ getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
    (TER,INI) = total
 -}
 calculations :: [(JobId,[Measure])] -> String
-calculations [] = ""
-calculations ((jobId,commandLs):xs) =
-   show jobId++","++combs++"\n"++calculations xs
-      where combs = concat [(safeCalcMeasure x y commandLs)++","
-                           |(x,y)<-[(PRB,INI),(SCH,PRB),(TER,SCH),(TER,INI)]]
+calculations allJobs = foldl (\old (jobId,commandLs)->
+   let combs = concat [(safeCalcMeasure x y commandLs) ++ ","
+                      |(x,y) <- [(PRB,INI),(SCH,PRB),(TER,SCH),(TER,INI)]]
+   in old ++ show jobId ++ "," ++ combs ++ "\n") "" allJobs
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: Command -> Command -> [Measure] -> String
@@ -151,9 +150,9 @@ safeCalcMeasure cmd1 cmd2 commandLs =
 
 {- try to pick from Just, in a safe manner... If not found return nothing -}
 getMeasure :: Command -> [Measure] -> Maybe Measure
-getMeasure _ []                                      = Nothing
-getMeasure cmd (measure@(inCmd,_):xs) | cmd == inCmd = Just measure
-                                      | otherwise    = getMeasure cmd xs
+getMeasure cmd ls = case (isJust $ lookup cmd ls) of
+                       True  -> Just (cmd,fromJust $ lookup cmd ls)
+                       False -> Nothing
 
 {- for a line from any output file (from kompics) take the 
    info we need and put it in an OutputLine tuple.
