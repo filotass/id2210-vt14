@@ -23,8 +23,10 @@ instance Show Setting where
                   "NUMBER_OF_JOBS:"   ++ (show (jobs setting))
 
 -- used for saving id [(cmd,time)]
-type Output     = M.Map Integer [(String,String)]
-type OutputLine = (Integer,String,String)
+type TimeStamp  = Float
+type Output     = M.Map Integer [Measure]
+type Measure    = (String,  TimeStamp)
+type OutputLine = (Integer, Measure)
 
 {-
    If no arguments are given, Print all combinations 
@@ -75,6 +77,7 @@ performOutputParsing readFrom writeTo = do
        theMap   = foldl (+->) M.empty allLines
    -- TODO: Here we can make various calculations from the hash map
    putStrLn $ show theMap
+   -- 99th percentile
    writeFileLine writeTo "test todo fill in read content" AppendMode
 
 {- for a line from any output file (from kompics) take the 
@@ -82,9 +85,11 @@ performOutputParsing readFrom writeTo = do
    Expects the format of three words on a line separated by space
 -}
 parseLine :: String -> OutputLine
-parseLine inp = (read jobId::Integer,command,timest)
+parseLine inp = (read jobId::Integer,(command,read timest::TimeStamp))
    where [jobId,command,timest] = words inp
          
-{- add one item to the output hashmap -}
+{- add one item to the output hashmap
+   fst line is the jobId, snd line are the measures for the outputline
+-}
 (+->) :: Output -> OutputLine -> Output
-out +-> (jobid,cmd,time) = M.insertWith (++) jobid [(cmd,time)] out
+out +-> line = M.insertWith (++) (fst line) [snd line] out
