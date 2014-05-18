@@ -78,12 +78,12 @@ performOutputParsing readFrom writeTo = do
    writeFileLine writeTo "test todo fill in read content" AppendMode
 
 {- for a line from any output file (from kompics) take the 
-   info we need and put it in an OutputLine tuple
+   info we need and put it in an OutputLine tuple.
+   Expects the format of three words on a line separated by space
 -}
 parseLine :: String -> OutputLine
 parseLine inp = (read jobId::Integer,command,timest)
-   where (command,rest) = (takeWhile (/=' ') inp, tail $ dropWhile (/=' ') inp)
-         (jobId,timest) = (takeWhile (/=' ') rest,tail $ dropWhile (/=' ') rest)
+   where [jobId,command,timest] = words inp
          
 {- add one item to the output hashmap -}
 (+->) :: Output -> OutputLine -> Output
