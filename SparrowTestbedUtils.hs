@@ -1,6 +1,7 @@
 -- runhaskell SparrowTestbedUtils.hs resourcemanager/output/
 
 import Control.Monad      (forM_)
+import Data.List
 import qualified Data.Map as M
 import System.Directory   (getDirectoryContents)
 import System.Environment (getArgs)
@@ -76,12 +77,18 @@ performOutputParsing readFrom writeTo = do
    file <- readFile readFrom
    let allLines = map parseLine (lines file)
        theMap   = foldl (+->) M.empty allLines
-   -- TODO: Here we can make various calculations from the hash map
-   putStrLn $ show theMap
-   -- 99th percentile
+       ls       = sort $ M.toList theMap
+   -- perform calculations, get a big string back and write this
+   -- string to the given statistics file
    writeFileLine (writeTo++(takeFileName readFrom))
-                 ("test todo fill in read content")
+                 (calculations ls)
                  AppendMode
+
+{- Here we can perform the calculations needed, and then format it all as
+   a string
+-}
+calculations :: [(Integer,[Measure])] -> String
+calculations ls = "Hello,Hello2\n"++"Hello3,Hello4"
 
 {- for a line from any output file (from kompics) take the 
    info we need and put it in an OutputLine tuple.
