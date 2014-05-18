@@ -97,13 +97,11 @@ getTs (cmd,timestamp) = timestamp
 {- Get averages and 99th percentile as a String -}
 averages :: [(JobId,[Measure])] -> String
 averages ls =
-   concat [label++" averages time " ++ (show $ getAvg times) ++ "\n" ++
-           label++" 99th p   time " ++ (show $ get99P times) ++ "\n"
-          | (label,times) <- combs]
-   where combs = [("Probing",getTimesFor PRB INI ls),
-                  ("Waiting",getTimesFor SCH PRB ls),
-                  ("Running",getTimesFor TER SCH ls),
-                  ("Total"  ,getTimesFor TER INI ls)]
+   concat [label  ++" averages time "++(show$getAvg$getTimesFor f t ls)++"\n"
+           ++label++" 99th p   time "++(show$get99P$getTimesFor f t ls)++"\n"
+          | (label,(f,t)) <- combs]
+   where combs = [("Probing",(PRB,INI)),("Waiting",(SCH,PRB)),
+                  ("Running",(TER,SCH)),("Total"  ,(TER,INI))]
 
 {- For a list of times, calculate average -}
 getAvg :: [TimeStamp] -> TimeStamp
@@ -128,16 +126,19 @@ getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
    a string
 
    Measure = (Command, TimeStamp)
+
+   between (A,B):
+   (PRB,INI) = probing
+   (SCH,PRB) = waiting
+   (TER,SCH) = running
+   (TER,INI) = total
 -}
 calculations :: [(JobId,[Measure])] -> String
 calculations [] = ""
 calculations ((jobId,commandLs):xs) =
-   (show jobId)++","++
-   (safeCalcMeasure PRB INI commandLs)++"," ++  -- probing
-   (safeCalcMeasure SCH PRB commandLs)++"," ++  -- waiting
-   (safeCalcMeasure TER SCH commandLs)++"," ++  -- running
-   (safeCalcMeasure TER INI commandLs)++"\n"++  -- total
-   calculations xs
+   show jobId++","++combs++"\n"++calculations xs
+      where combs = concat [(safeCalcMeasure x y commandLs)++","
+                           |(x,y)<-[(PRB,INI),(SCH,PRB),(TER,SCH),(TER,INI)]]
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: Command -> Command -> [Measure] -> String
