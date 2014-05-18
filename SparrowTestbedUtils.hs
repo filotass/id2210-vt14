@@ -86,7 +86,7 @@ performOutputParsing readFrom writeTo = do
        ls       = sort $ M.toList theMap
    -- perform calculations, get a big string back and write this
    -- string to the given statistics file
-   forM_ [(calculations ls,writeTo++(takeFileName readFrom)),
+   forM_ [(foldl calculations "" ls,writeTo++(takeFileName readFrom)),
           (averages ls, writeTo++"__averages__"++(takeFileName readFrom))]
          (\(theList,theMsg) -> writeFileLine theMsg theList WriteMode)
 
@@ -97,8 +97,8 @@ getTs (cmd,timestamp) = timestamp
 {- Get averages and 99th percentile as a String -}
 averages :: [(JobId,[Measure])] -> String
 averages ls =
-   concat [label  ++" averages time "++(show$getAvg$getTimesFor f t ls)++"\n"
-           ++label++" 99th p   time "++(show$get99P$getTimesFor f t ls)++"\n"
+   concat [label++" averages time "     ++(show $ getAvg $ getTimesFor f t ls)++
+           "\n" ++label++" 99th p time "++(show $ get99P $ getTimesFor f t ls)++"\n"
           | (label,(f,t)) <- combs]
    where combs = [("Probing",(PRB,INI)),("Waiting",(SCH,PRB)),
                   ("Running",(TER,SCH)),("Total"  ,(TER,INI))]
@@ -133,11 +133,10 @@ getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
    (TER,SCH) = running
    (TER,INI) = total
 -}
-calculations :: [(JobId,[Measure])] -> String
-calculations allJobs = foldl (\old (jobId,commandLs)->
-   let combs = concat [(safeCalcMeasure x y commandLs) ++ ","
-                      |(x,y) <- [(PRB,INI),(SCH,PRB),(TER,SCH),(TER,INI)]]
-   in old ++ show jobId ++ "," ++ combs ++ "\n") "" allJobs
+calculations :: String -> (JobId,[Measure]) -> String
+calculations old (jobId,commandLs) = old ++ show jobId ++ "," ++ combs ++ "\n"
+   where combs = concat [(safeCalcMeasure x y commandLs) ++ ","
+                        |(x,y) <- [(PRB,INI),(SCH,PRB),(TER,SCH),(TER,INI)]]
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: Command -> Command -> [Measure] -> String
