@@ -2,6 +2,7 @@
 
 import Control.Monad      (forM_)
 import Data.List
+import Data.Maybe
 import qualified Data.Map as M
 import System.Directory   (getDirectoryContents)
 import System.Environment (getArgs)
@@ -26,9 +27,11 @@ instance Show Setting where
 
 -- used for saving id [(cmd,time)]
 type TimeStamp  = Float
+type Command    = String
+type JobId      = Integer
 type Output     = M.Map Integer [Measure]
-type Measure    = (String,  TimeStamp)
-type OutputLine = (Integer, Measure)
+type Measure    = (Command, TimeStamp)
+type OutputLine = (JobId,   Measure)
 
 {-
    If no arguments are given, Print all combinations 
@@ -86,16 +89,40 @@ performOutputParsing readFrom writeTo = do
 
 {- Here we can perform the calculations needed, and then format it all as
    a string
+
+   Measure = (Command, TimeStamp)
 -}
-calculations :: [(Integer,[Measure])] -> String
-calculations ls = "Hello,Hello2\n"++"Hello3,Hello4"
+calculations :: [(JobId,[Measure])] -> String
+calculations [] = ""
+calculations ((jobId,commandLs):xs) = line ++ "\n" ++ calculations xs
+   where line    = (show jobId) ++ waiting ++ t2 ++ t3 ++ node
+         waiting = case (isJust ini && isJust trm) of
+                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
+                      False -> "error_no_ini_or_trm"
+         t2      = case (isJust ini && isJust trm) of
+                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
+                      False -> "error_no_ini_or_trm"
+         t3      = case (isJust ini && isJust trm) of
+                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
+                      False -> "error_no_ini_or_trm"
+         node    = case (isJust ini && isJust trm) of
+                      True  -> show $ (snd (fromJust ini)) - (snd (fromJust trm))
+                      False -> "error_no_ini_or_trm"
+         ini     = getMeasure "INI" commandLs
+         trm     = getMeasure "TEM" commandLs
+         sch     = getMeasure "SCH" commandLs
+
+getMeasure :: Command -> [Measure] -> Maybe Measure
+getMeasure _ []                                      = Nothing
+getMeasure cmd (measure@(inCmd,_):xs) | cmd == inCmd = Just measure
+                                      | otherwise    = getMeasure cmd xs
 
 {- for a line from any output file (from kompics) take the 
    info we need and put it in an OutputLine tuple.
    Expects the format of three words on a line separated by space
 -}
 parseLine :: String -> OutputLine
-parseLine inp = (read jobId::Integer,(command,read timest::TimeStamp))
+parseLine inp = (read jobId::JobId,(command,read timest::TimeStamp))
    where [jobId,command,timest] = words inp
          
 {- add one item to the output hashmap
