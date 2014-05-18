@@ -16,6 +16,7 @@ public class Snapshot {
     public static final String FOLDER = "outputfiles/";
     public static final String S = " ";
     public static final String INI = "INI";
+    public static final String PRB = "PRB";
     public static final String SCH = "SCH";
     public static final String TER = "TER";
     

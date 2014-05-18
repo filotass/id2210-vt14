@@ -167,7 +167,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<Job> handleRequestResource = new Handler<Job>() {
         @Override
         public void handle(Job event) {
-            Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
+            
             System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
             List<Address> copyNeighbourList = new ArrayList<Address>();
@@ -175,7 +175,11 @@ public final class ResourceManager extends ComponentDefinition {
             // remember the job and then probe the peer network
             jobsFromClients.put(event.getId(), event);
             int times = Math.min(NUM_PROBES, neighbours.size());
+            if(times != 0){
+            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
+            }
             for(int i=0; i< times; i++){
+            	
             	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
             	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
             	copyNeighbourList.remove(index);
@@ -238,22 +242,33 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
         	Job job = event.getJob();
-        	Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+        	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+        	System.out.print("QUEUE SIZE= "+ queuedJobs.size());
         	if(queuedJobs.size()>0){
         		queuedJobs.add(job);
-        	}else if(availableResources.isAvailable(job.getNumCpus(), job.getMemoryInMbs())){
-        		availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
-        		
-        		ScheduleTimeout st = new ScheduleTimeout(job.getTimeToHoldResource());
-        		st.setTimeoutEvent(new JobFinishedTimeout(st,job.getId()));
-                trigger(st, timerPort);
         	}else{
         		queuedJobs.add(job);
-//        		System.err.println("Job cannot run in this machine!! Not enough resources");
-//        		System.exit(1);
+        		scheduleJob(job);
         	}
         }
     };
+    
+    private void scheduleJob(Job job){
+    	if(availableResources.isAvailable(job.getNumCpus(), job.getMemoryInMbs())){
+    		availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
+    		Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+    		ScheduleTimeout st = new ScheduleTimeout(job.getTimeToHoldResource());
+    		st.setTimeoutEvent(new JobFinishedTimeout(st,job.getId()));
+    		trigger(st, timerPort);
+    	}else{
+    		System.out.println("Avail CPU=" + availableResources.getNumFreeCpus() +"Avail Mem="+availableResources.getFreeMemInMbs());
+    		System.out.println("Requi CPU=" + job.getNumCpus() +"Requi Mem="+job.getMemoryInMbs());
+    		queuedJobs.add(job);
+    		System.err.println("Job cannot run in this machine!! Not enough resources");
+    		System.exit(1);
+    	}
+
+    }
     
     /**
      * Role of Worker. Listens for a JobFinishedTimeout event in order to indicate that a Job
@@ -262,15 +277,14 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<JobFinishedTimeout> handleJobFinishedTimeout = new Handler<JobFinishedTimeout>() {
         @Override
         public void handle(JobFinishedTimeout event) {
-        	Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         	for(Job job: queuedJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
+        			Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         			queuedJobs.remove(job);
         			if(queuedJobs.size()>0){
-        				ScheduleTimeout st = new ScheduleTimeout(queuedJobs.get(0).getTimeToHoldResource());
-                		st.setTimeoutEvent(new JobFinishedTimeout(st,queuedJobs.get(0).getId()));
-                        trigger(st, timerPort);
+        				Job nextJob = queuedJobs.get(0);
+        				scheduleJob(nextJob);
         			}
         			break;
         		}

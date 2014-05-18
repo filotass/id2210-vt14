@@ -137,7 +137,13 @@ public final class DataCenterSimulator extends ComponentDefinition {
         @Override
         public void handle(TerminateExperiment event) {
             System.err.println("Finishing experiment - terminating....");
-            System.exit(0);
+//            try {
+//				Thread.sleep(20000);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+            
         }
     };
     

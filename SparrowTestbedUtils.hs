@@ -26,7 +26,7 @@ instance Show Setting where
                   "NUMBER_OF_JOBS:"   ++ (show (jobs setting))
 
 -- used for saving id [(cmd,time)]
-type TimeStamp  = Float
+type TimeStamp  = Integer
 type Command    = String
 type JobId      = Integer
 type Output     = M.Map Integer [Measure]
@@ -83,9 +83,10 @@ performOutputParsing readFrom writeTo = do
        ls       = sort $ M.toList theMap
    -- perform calculations, get a big string back and write this
    -- string to the given statistics file
+   putStrLn (show ls)
    writeFileLine (writeTo++(takeFileName readFrom))
                  (calculations ls)
-                 AppendMode
+                 WriteMode
 
 getTs :: Measure -> TimeStamp
 getTs (cmd,timestamp) = timestamp
@@ -98,10 +99,13 @@ getTs (cmd,timestamp) = timestamp
 calculations :: [(JobId,[Measure])] -> String
 calculations [] = ""
 calculations ((jobId,commandLs):xs) = line ++ "\n" ++ calculations xs
-   where line    = (show jobId)++","++waiting++","++running++","++total
-         waiting = case (isJust sch && isJust ini) of
-                      True  -> show $ (getTs (fromJust sch)) - (getTs (fromJust ini))
-                      False -> "error_no_sch_or_ini"
+   where line    = (show jobId)++","++probing++","++waiting++","++running++","++total
+         probing = case (isJust prb && isJust ini) of
+                      True  -> show $ (getTs (fromJust prb)) - (getTs (fromJust ini))
+                      False -> "error_no_prb_or_ini"
+         waiting = case (isJust sch && isJust prb) of
+                      True  -> show $ (getTs (fromJust sch)) - (getTs (fromJust prb))
+                      False -> "error_no_sch_or_prb"
          running = case (isJust trm && isJust sch) of
                       True  -> show $ (getTs (fromJust trm)) - (getTs (fromJust sch))
                       False -> "error_no_trm_or_sch"
@@ -111,6 +115,7 @@ calculations ((jobId,commandLs):xs) = line ++ "\n" ++ calculations xs
          ini     = getMeasure "INI" commandLs
          trm     = getMeasure "TER" commandLs
          sch     = getMeasure "SCH" commandLs
+         prb     = getMeasure "PRB" commandLs
 
 getMeasure :: Command -> [Measure] -> Maybe Measure
 getMeasure _ []                                      = Nothing
@@ -123,7 +128,7 @@ getMeasure cmd (measure@(inCmd,_):xs) | cmd == inCmd = Just measure
 -}
 parseLine :: String -> OutputLine
 parseLine inp = (read jobId::JobId,(command,read timest::TimeStamp))
-   where [jobId,command,timest] = words inp
+   where [command,jobId,timest] = words inp
          
 {- add one item to the output hashmap
    fst line is the jobId, snd line are the measures for the outputline

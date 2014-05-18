@@ -41,6 +41,7 @@ public class AvailableResources {
         if (numCpus <= 0 || memInMbs <= 0) {
             throw new IllegalArgumentException("Invalid numbCpus or mem");
         }
+        System.err.println("More available resources!");
         numFreeCpus += numCpus;
         freeMemInMbs += memInMbs;
     }
