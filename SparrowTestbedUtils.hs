@@ -87,9 +87,56 @@ performOutputParsing readFrom writeTo = do
    writeFileLine (writeTo++(takeFileName readFrom))
                  (calculations ls)
                  WriteMode
+   -- write the average files
+   writeFileLine (writeTo++"__averages__"++(takeFileName readFrom))
+                 (averages ls)
+                 WriteMode
 
+{- Helper function for getting timeStamp from a Measure -}
 getTs :: Measure -> TimeStamp
 getTs (cmd,timestamp) = timestamp
+
+{- Get averages and 99th percentile as a String -}
+averages :: [(JobId,[Measure])] -> String
+averages ls = "Probing average time" ++ probingAvg  ++ "\n" ++
+              "Probing 99th p  time" ++ probing99   ++ "\n" ++
+              "Waiting average time" ++ waitingAvg  ++ "\n" ++
+              "Waiting 99th p  time" ++ waiting99   ++ "\n" ++
+              "Running average time" ++ runningAvg  ++ "\n" ++
+              "Running 99th p  time" ++ running99   ++ "\n" ++
+              "Total   average time" ++ totalAvg    ++ "\n" ++
+              "Total   99th p  time" ++ total99     ++ "\n"
+   where probing99  = show $ get99Percentile probing
+         waiting99  = show $ get99Percentile waiting
+         running99  = show $ get99Percentile running
+         total99    = show $ get99Percentile total
+         probingAvg = show $ getAverage probing
+         waitingAvg = show $ getAverage waiting
+         runningAvg = show $ getAverage running
+         totalAvg   = show $ getAverage total
+         probing    = getTimesFor "PRB" "INI" ls
+         waiting    = getTimesFor "SCH" "PRB" ls
+         running    = getTimesFor "TRM" "SCH" ls
+         total      = getTimesFor "TRM" "INI" ls
+
+{- For a list of times, calculate average -}
+getAverage :: [TimeStamp] -> TimeStamp
+getAverage ls = div (sum ls) (toInteger $ length ls)
+
+{- For a list of times, calculate 99th percentile -}
+get99Percentile :: [TimeStamp] -> TimeStamp
+get99Percentile ls = div (sum percent99) (toInteger $ length percent99)
+   where percent99 = take (round (len*0.99)) ls
+         len       = fromIntegral $ length (sort ls)
+
+{- Get all results for Command1 - Command2
+   
+   THIS FUNCTION IS UNSAFE because it assumes all Maybes are Just
+-}
+getTimesFor :: Command -> Command -> [(JobId,[Measure])] -> [TimeStamp]
+getTimesFor c1 c2 ls = [getTs measure1-getTs measure2|(measure1,measure2)<-a]
+   where a = [(fromJust $ getMeasure c1 measures, fromJust $ getMeasure c2 measures)
+             |(_,measures)<-ls]
 
 {- Here we can perform the calculations needed, and then format it all as
    a string
