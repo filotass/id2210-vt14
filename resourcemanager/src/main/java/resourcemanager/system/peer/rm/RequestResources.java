@@ -1,8 +1,8 @@
 package resourcemanager.system.peer.rm;
 
-import java.util.List;
 
-import common.simulation.Job;
+
+
 import common.simulation.SuperJob;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
@@ -92,7 +92,11 @@ public class RequestResources  {
     }
     
     public static class ScheduleJob extends Message{
-    	private final SuperJob job;
+    	/**
+		 * 
+		 */
+		private static final long serialVersionUID = -128729829888990781L;
+		private final SuperJob job;
     	
 		public ScheduleJob(Address source, Address destination, SuperJob job) {
 			super(source, destination);

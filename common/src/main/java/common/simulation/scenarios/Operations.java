@@ -1,10 +1,7 @@
 package common.simulation.scenarios;
 
-import java.util.ArrayList;
-
 import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
-import common.simulation.Job;
 import common.simulation.SuperJob;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
@@ -39,27 +36,22 @@ public class Operations {
         }
     };
 
-    public static Operation4<Job, Long, Long, Long, Long> requestResources() {
-        return new Operation4<Job, Long, Long, Long, Long>() {
-            @Override
-            public Job generate(Long id, Long numCpus, Long memInMbs, Long timeToHoldResourceInMilliSecs) {
-                return new Job(id, numCpus.intValue(),
-                        memInMbs.intValue(),
-                        timeToHoldResourceInMilliSecs.intValue());
-            }
-        };
-    }
+//    public static Operation4<Job, Long, Long, Long, Long> requestResources() {
+//        return new Operation4<Job, Long, Long, Long, Long>() {
+//            @Override
+//            public Job generate(Long id, Long numCpus, Long memInMbs, Long timeToHoldResourceInMilliSecs) {
+//                return new Job(id, numCpus.intValue(),
+//                        memInMbs.intValue(),
+//                        timeToHoldResourceInMilliSecs.intValue());
+//            }
+//        };
+//    }
     
     public static Operation5<SuperJob, Long, Long, Long, Long, Long> requestBatchResources() {
         return new Operation5<SuperJob, Long, Long, Long, Long, Long>() {
             @Override
             public SuperJob generate(Long superJobID,Long numOfJobs, Long numCpus, Long memInMbs, Long timeToHoldResourceInMilliSecs) {
-            	ArrayList<Job> jobs = new ArrayList<Job>();
-            	for(int i=0; i<numOfJobs; i++){
-
-            		jobs.add(Operations.requestResources().generate(superJobID, numCpus, memInMbs, timeToHoldResourceInMilliSecs));
-            	}
-                return new SuperJob(superJobID, jobs);
+                return new SuperJob(superJobID, numOfJobs.intValue(),numCpus.intValue(), memInMbs.intValue(), timeToHoldResourceInMilliSecs.intValue());
             }
         };
     }

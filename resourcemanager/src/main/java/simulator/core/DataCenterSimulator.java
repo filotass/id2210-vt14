@@ -29,7 +29,7 @@ import common.simulation.ConsistentHashtable;
 import common.simulation.GenerateReport;
 import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
-import common.simulation.Job;
+
 import common.simulation.SimulatorInit;
 import common.simulation.SuperJob;
 

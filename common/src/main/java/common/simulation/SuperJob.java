@@ -1,23 +1,25 @@
 package common.simulation;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 import se.sics.kompics.Event;
 
 public class SuperJob extends Event implements Serializable{
 
-	private static final long serialVersionUID = 8560340748147990308L;
+
+	private static final long serialVersionUID = -2676264713697416246L;
 	private long id;
-	private ArrayList<Job> jobs;
-	
-	public SuperJob(Long id, ArrayList<Job> jobs){
+    private final int numOfTasks;
+    private final int numCpus;
+    private final int memoryInMbs;
+    private final int timeToHoldResource;
+
+	public SuperJob(Long id, int numOfTasks, int numCpus, int memoryInMbs, int timeToHoldResource){
 		this.id= id;
-		this.jobs = jobs;
-	}
-	
-	public ArrayList<Job> getJobs(){
-		return jobs;	
+		this.numOfTasks = numOfTasks;
+		this.numCpus = numCpus;
+		this.memoryInMbs = memoryInMbs;
+		this.timeToHoldResource = timeToHoldResource;
 	}
 	
 	public long getId(){
@@ -25,23 +27,23 @@ public class SuperJob extends Event implements Serializable{
 	}
 	
 	public boolean isSingular(){
-		return (jobs.size()==1);
+		return (numOfTasks==1);
 	}
 	
-	public int getNumJobs(){
-		return jobs.size();
+	public int getNumOfTasks(){
+		return numOfTasks;
 	}
 	
 	public int getNumCpus(){
-		return jobs.get(0).getNumCpus();
+		return numCpus;
 	}
 	
 	public int getMemoryInMbs(){
-		return jobs.get(0).getMemoryInMbs();
+		return memoryInMbs;
 	}
 	
 	public int getTimeToHoldResource(){
-		return 	jobs.get(0).getTimeToHoldResource();
+		return 	timeToHoldResource;
 	}
 	
 

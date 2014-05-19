@@ -2,7 +2,6 @@ package resourcemanager.system.peer.rm;
 
 import common.configuration.RmConfiguration;
 import common.peer.AvailableResources;
-import common.simulation.Job;
 import common.simulation.SuperJob;
 import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.CyclonSample;
@@ -187,8 +186,8 @@ public final class ResourceManager extends ComponentDefinition {
             jobsFromClients.put(event.getId(), event);
             
             //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
-            if(event.isSingular() || event.getNumJobs() <= neighbours.size()){
-	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumJobs(), neighbours.size()));
+            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()){
+	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumOfTasks(), neighbours.size()));
 	            
 	            if(numProbesPerJob.get(event.getId()) != 0){
 	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
@@ -244,14 +243,14 @@ public final class ResourceManager extends ComponentDefinition {
             	// When removing events from the list, we are guaranteed to have enough elements
             	// to not exhaust the list in the loop. Because we reject scheduling requests from apps
             	// when they request more than the available neighbors.
-            	for(int i=0; i<superJob.getNumJobs(); i++){
+            	for(int i=0; i<superJob.getNumOfTasks(); i++){
             	   	RequestResources.Response minLoadResponse = Collections.min(list);
             	   	list.remove(minLoadResponse);
                 	Address selectedPeer = minLoadResponse.getSource();
                 	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
                 	trigger(schJob,networkPort);
-                	jobsFromClients.remove(event.getJobID());
             	}
+            	jobsFromClients.remove(event.getJobID());
          
             }
             
