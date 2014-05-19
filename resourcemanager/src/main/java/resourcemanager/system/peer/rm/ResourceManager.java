@@ -3,6 +3,7 @@ package resourcemanager.system.peer.rm;
 import common.configuration.RmConfiguration;
 import common.peer.AvailableResources;
 import common.simulation.Job;
+import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import cyclon.system.peer.cyclon.PeerDescriptor;
@@ -76,6 +77,12 @@ public final class ResourceManager extends ComponentDefinition {
      */
     private Map<Long,List<RequestResources.Response>> probesReceived = new HashMap<Long, List<RequestResources.Response>>();
     
+    
+    /**
+     * Used for role of Scheduler. Holds the Number of probes per Job.
+     */
+    private Map<Long,Integer> numProbesPerJob = new HashMap<Long,Integer>();
+    
     /**
      * Used for role of Scheduler. Holds the Jobs to be assigned to Workers.
      */
@@ -122,7 +129,7 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RmInit init) {
             self = init.getSelf();
             configuration = init.getConfiguration();
-            NUM_PROBES = configuration.getProbesPerJob();
+            NUM_PROBES = Integer.parseInt(System.getProperty(Experiment.NUM_OF_PROBES));
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
             long period = configuration.getPeriod();
@@ -155,7 +162,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-            System.out.println("Received samples: " + event.getSample().size());
+           // System.out.println("Received samples: " + event.getSample().size());
             
             // receive a new list of neighbours
             neighbours.clear();
@@ -170,17 +177,19 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(Job event) {
             
-            System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
+            //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
             List<Address> copyNeighbourList = new ArrayList<Address>();
             copyNeighbourList.addAll(neighbours);
+            
             // remember the job and then probe the peer network
             jobsFromClients.put(event.getId(), event);
-            int times = Math.min(NUM_PROBES, neighbours.size());
-            if(times != 0){
+            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES, neighbours.size()));
+            
+            if(numProbesPerJob.get(event.getId()) != 0){
             	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
             }
-            for(int i=0; i< times; i++){
+            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
             	
             	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
             	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
@@ -196,7 +205,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Request> handleResourceAllocationRequest = new Handler<RequestResources.Request>() {
         @Override
         public void handle(RequestResources.Request event) {
-        	System.out.println("Request incoming for job with id = "+ event.getJobID());
+        	//System.out.println("Request incoming for job with id = "+ event.getJobID());
         	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
         				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
         	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval,queuedJobs.size()),networkPort);
@@ -212,7 +221,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Response event) {
             
-        	System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
+        	//System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
             
         	List<RequestResources.Response>  list =  probesReceived.get(event.getJobID());
             
@@ -221,8 +230,8 @@ public final class ResourceManager extends ComponentDefinition {
             	probesReceived.put(event.getJobID(), list);
             }
             list.add(event);
-            
-            if(list.size()== NUM_PROBES){
+                        
+            if(list.size()== numProbesPerJob.get(event.getJobID())){
             	RequestResources.Response minLoadResponse = Collections.min(list);
             	Address selectedPeer = minLoadResponse.getSource();
             	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
@@ -244,8 +253,8 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
         	Job job = event.getJob();
-        	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
+        	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
         	}
