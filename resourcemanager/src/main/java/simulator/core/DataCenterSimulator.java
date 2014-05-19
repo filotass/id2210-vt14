@@ -31,6 +31,7 @@ import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
 import common.simulation.Job;
 import common.simulation.SimulatorInit;
+import common.simulation.SuperJob;
 
 import java.net.InetAddress;
 import java.util.Random;
@@ -90,9 +91,9 @@ public final class DataCenterSimulator extends ComponentDefinition {
         }
     };
         
-    Handler<Job> handleRequestResource = new Handler<Job>() {
+    Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
-        public void handle(Job event) {
+        public void handle(SuperJob event) {
             Long successor = ringNodes.getNode(event.getId());
             Component peer = peers.get(successor);
             trigger( event, peer.getNegative(RmPort.class));

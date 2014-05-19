@@ -3,7 +3,7 @@ package resourcemanager.system.peer.rm;
 import java.util.List;
 
 import common.simulation.Job;
-
+import common.simulation.SuperJob;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -92,14 +92,14 @@ public class RequestResources  {
     }
     
     public static class ScheduleJob extends Message{
-    	private final Job job;
+    	private final SuperJob job;
     	
-		public ScheduleJob(Address source, Address destination, Job job) {
+		public ScheduleJob(Address source, Address destination, SuperJob job) {
 			super(source, destination);
 			this.job = job;
 		}
 		
-		public Job getJob(){
+		public SuperJob getJob(){
 			return job;
 		}
     	

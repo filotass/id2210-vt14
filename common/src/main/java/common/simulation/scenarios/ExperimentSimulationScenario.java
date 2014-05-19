@@ -35,10 +35,19 @@ public class ExperimentSimulationScenario  extends SimulationScenario{
 					);
 		}};
 		
+//		process1 = new StochasticProcess() {{
+//			eventInterArrivalTime(constant(100));
+//			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestResources(), 
+//				  uniform(0, Integer.MAX_VALUE),
+//					constant(2), constant(2000),
+//					constant(1000) // 1 second
+//					);
+//		}};
+		
 		process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestResources(), 
-				  uniform(0, Integer.MAX_VALUE),
+			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestBatchResources(), 
+				    uniform(0, Integer.MAX_VALUE), constant(1), // 1 = singular, +1 = batch
 					constant(2), constant(2000),
 					constant(1000) // 1 second
 					);

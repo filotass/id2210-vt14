@@ -3,6 +3,7 @@ package resourcemanager.system.peer.rm;
 import common.configuration.RmConfiguration;
 import common.peer.AvailableResources;
 import common.simulation.Job;
+import common.simulation.SuperJob;
 import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
@@ -68,9 +69,9 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Used for role of Worker. Queues Jobs that are assigned from Schedulers.
      */
-    private List<Job> queuedJobs = new ArrayList<Job>();
+    private List<SuperJob> queuedJobs = new ArrayList<SuperJob>();
     
-    private List<Job> runningJobs = new ArrayList<Job>();
+    private List<SuperJob> runningJobs = new ArrayList<SuperJob>();
     
     /**
      * Used for role of Scheduler. Holds the Probe Responses per Job while probing the Peer Network.
@@ -86,7 +87,7 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Used for role of Scheduler. Holds the Jobs to be assigned to Workers.
      */
-    private Map<Long,Job> jobsFromClients = new HashMap<Long,Job>();
+    private Map<Long,SuperJob> jobsFromClients = new HashMap<Long,SuperJob>();
     
     /**
      * Number of Probes sent for each Job. Increasing the number of probes may have better accuracy but it increases the 
@@ -173,9 +174,9 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      *  Role of Scheduler. Handle incoming scheduling jobs from client apps and send probes to worker peers.
      */
-    Handler<Job> handleRequestResource = new Handler<Job>() {
+    Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
-        public void handle(Job event) {
+        public void handle(SuperJob event) {
             
             //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
@@ -184,20 +185,26 @@ public final class ResourceManager extends ComponentDefinition {
             
             // remember the job and then probe the peer network
             jobsFromClients.put(event.getId(), event);
-            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES, neighbours.size()));
             
-            if(numProbesPerJob.get(event.getId()) != 0){
-            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
-            }
-            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
-            	
-            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
-            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
-            	copyNeighbourList.remove(index);
-            	trigger(req, networkPort);     	
+            //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
+            if(event.isSingular() || event.getNumJobs() <= neighbours.size()){
+	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumJobs(), neighbours.size()));
+	            
+	            if(numProbesPerJob.get(event.getId()) != 0){
+	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
+	            }
+	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
+	            	
+	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
+	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
+	            	copyNeighbourList.remove(index);
+	            	trigger(req, networkPort);     	
+	            }
             }
         }
     };
+    
+    
     
     /**
      *  Role of Worker. Listening incoming ResourceAllocationRequests from Schedulers that probe this Worker.
@@ -232,11 +239,20 @@ public final class ResourceManager extends ComponentDefinition {
             list.add(event);
                         
             if(list.size()== numProbesPerJob.get(event.getJobID())){
-            	RequestResources.Response minLoadResponse = Collections.min(list);
-            	Address selectedPeer = minLoadResponse.getSource();
-            	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
-            	trigger(schJob,networkPort);
-            	jobsFromClients.remove(event.getJobID());
+            	SuperJob superJob = jobsFromClients.get(event.getJobID());
+            	
+            	// When removing events from the list, we are guaranteed to have enough elements
+            	// to not exhaust the list in the loop. Because we reject scheduling requests from apps
+            	// when they request more than the available neighbors.
+            	for(int i=0; i<superJob.getNumJobs(); i++){
+            	   	RequestResources.Response minLoadResponse = Collections.min(list);
+            	   	list.remove(minLoadResponse);
+                	Address selectedPeer = minLoadResponse.getSource();
+                	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
+                	trigger(schJob,networkPort);
+                	jobsFromClients.remove(event.getJobID());
+            	}
+         
             }
             
         }
@@ -252,7 +268,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.ScheduleJob> handleIncomingJob = new Handler<RequestResources.ScheduleJob>() {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
-        	Job job = event.getJob();
+        	SuperJob job = event.getJob();
 
         	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
         	if(!scheduleJob(job)){
@@ -261,7 +277,7 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
     
-    private boolean scheduleJob(Job job){
+    private boolean scheduleJob(SuperJob job){
     	boolean success = availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
     	if(success){
     		runningJobs.add(job);
@@ -280,13 +296,13 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<JobFinishedTimeout> handleJobFinishedTimeout = new Handler<JobFinishedTimeout>() {
         @Override
         public void handle(JobFinishedTimeout event) {
-        	for(Job job: runningJobs){
+        	for(SuperJob job: runningJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
         			Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         			runningJobs.remove(job);
         			if(queuedJobs.size()>0){
-        				Job nextJob = queuedJobs.get(0);
+        				SuperJob nextJob = queuedJobs.get(0);
         				if(scheduleJob(nextJob)){
         					queuedJobs.remove(nextJob);
         				}
