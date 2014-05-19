@@ -1,14 +1,13 @@
 -- runhaskell TestUtils.hs resourcemanager/output/
-
-import Control.Monad                (forM_)
+import Control.Monad         (forM_)
 import Data.List
 import Data.Maybe
 import Data.Tuple
-import qualified Data.Map           as M
-import System.Directory             (getDirectoryContents)
-import System.Environment           (getArgs)
+import qualified Data.Map    as M
+import System.Directory      (getDirectoryContents)
+import System.Environment    (getArgs)
 import System.IO
-import System.FilePath.Posix        (takeFileName)
+import System.FilePath.Posix (takeFileName)
 
 {-- Used for storing information for the input.conf files --}
 data Setting = Setting
@@ -19,31 +18,31 @@ data Setting = Setting
   , jobs      :: Integer
   }
 
--- list the commands
-data Command = PRB | INI | TER | SCH
-   deriving (Show,Read,Ord,Eq)
-
-data End = High | Low
-   deriving (Show,Read)
-
 {- toString definition for Setting -}
 instance Show Setting where
-   show setting = "OUTFILE:output"    ++ (show (theId setting))  ++".out\n"++
-                  "NUMBER_OF_PROBES:" ++ (show (probes setting)) ++"\n"    ++
-                  "NUMBER_OF_NODES:"  ++ (show (nodes setting))  ++"\n"    ++
-                  "NUMBER_OF_JOBS:"   ++ (show (jobs setting))
+   show setting = "OUTFILE:output"   ++(show (theId setting)) ++".out\n"++
+                  "NUMBER_OF_PROBES:"++(show (probes setting))++"\n"    ++
+                  "NUMBER_OF_NODES:" ++(show (nodes setting)) ++"\n"    ++
+                  "NUMBER_OF_JOBS:"  ++(show (jobs setting))
 
--- used for saving id [(cmd,time)]
+-- list the commands
+data Command    = PRB  | INI | TER | SCH deriving (Show,Read,Ord,Eq)
+data End        = High | Low deriving (Show,Read)
 type TimeStamp  = Integer
 type JobId      = Integer
-type Output     = M.Map Integer [Measure]
+type Output     = M.Map Integer [Measure] -- used for saving id [(cmd,time)]
 type Measure    = (Command, TimeStamp)
 type OutputLine = (JobId,   Measure)
 
-{-
-   If no arguments are given, Print all combinations 
-   for the setting variables probes, nodes, jobs and their ID.
--}
+-- the specification of what should be tested
+tests :: [(String,((Command,End),(Command,End)))]
+tests = [(,) "Probing" $ (,) (PRB,Low)  (INI,Low),
+         (,) "Waiting" $ (,) (SCH,Low)  (PRB,Low),
+         (,) "Running" $ (,) (TER,High) (SCH,Low),
+         (,) "Total"   $ (,) (TER,High) (INI,Low)]
+
+{- If no arguments are given, Print all combinations 
+   for the setting variables probes, nodes, jobs and their ID. -}
 main :: IO ()
 main = do
    args <- getArgs
@@ -80,8 +79,7 @@ writeFileLine fp content mode = do
    hClose handle
 
 {- Read an output file, parse it, 
-   perform calculations and generate new output files
--}
+   perform calculations and generate new output files -}
 performOutputParsing :: FilePath -> FilePath -> IO ()
 performOutputParsing readFrom writeTo = do
    file <- readFile readFrom
@@ -103,19 +101,14 @@ averages :: [(JobId,[Measure])] -> String
 averages ls =
    concat [label++" averages time "     ++(show $ getAvg $ getTimesFor f t ls)++
            "\n" ++label++" 99th p time "++(show $ get99P $ getTimesFor f t ls)++"\n"
-          | (label,(f,t)) <- combs]
-   where combs = [("Probing",((PRB,High),(INI,High))),
-                  ("Waiting",((SCH,High),(PRB,High))),
-                  ("Running",((TER,High),(SCH,High))),
-                  ("Total"  ,((TER,High),(INI,High)))]
+          | (label,(f,t)) <- tests]
 
 {- For a list of times, calculate average -}
 getAvg :: [TimeStamp] -> TimeStamp
 getAvg ls = div (sum ls) (toInteger $ length ls)
 
 {- For a list of times, calculate 99th percentile 
-   @see https://answers.yahoo.com/question/index?qid=1005122102489
--}
+   @see https://answers.yahoo.com/question/index?qid=1005122102489 -}
 get99P :: [TimeStamp] -> TimeStamp
 get99P ls = last percent99
    where percent99 = take (ceiling $ len*0.99) (sort ls)
@@ -123,32 +116,19 @@ get99P ls = last percent99
 
 {- Get all results for Command1 - Command2
    
-   THIS FUNCTION IS UNSAFE because it assumes all Maybes are Just
--}
+   THIS FUNCTION IS UNSAFE because it assumes all Maybes are Just -}
 getTimesFor :: (Command,End) -> (Command,End) -> [(JobId,[Measure])] -> [TimeStamp]
 getTimesFor (c1,e1) (c2,e2) ls =
    [getTs measure1 - getTs measure2 | (measure1,measure2) <- a]
-      where a = [(fromJust $ getMeasure c1 e1 meas, fromJust $ getMeasure c2 e2 meas)
+      where a = [(fromJust $ getMeasure c1 e1 meas,fromJust $ getMeasure c2 e2 meas)
                 |(_,meas)<-ls]
 
 {- Here we can perform the calculations needed, and then format it all as
-   a string
-
-   Measure = (Command, TimeStamp)
-
-   between (A,B):
-   (PRB,INI) = probing
-   (SCH,PRB) = waiting
-   (TER,SCH) = running
-   (TER,INI) = total
--}
+   a string -}
 calculations :: String -> (JobId,[Measure]) -> String
 calculations old (jobId,commLs) = old ++ show jobId ++ "," ++ combs ++ "\n"
    where combs = concat [(safeCalcMeasure x y commLs) ++ "," | (x,y)<-cs]
-         cs = [((PRB,High),(INI,High)),
-               ((SCH,High),(PRB,High)),
-               ((TER,High),(SCH,High)),
-               ((TER,High),(INI,High))]
+         cs = map snd tests
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: (Command,End) -> (Command,End) -> [Measure] -> String
@@ -160,8 +140,7 @@ safeCalcMeasure (cmd1,e1) (cmd2,e2) commandLs =
          m2 = getMeasure cmd2 e2 commandLs
 
 {- try to pick from Just, in a safe manner... If not found return nothing
-   (Command, TimeStamp)
--}
+   (Command, TimeStamp) -}
 getMeasure :: Command -> End -> [Measure] -> Maybe Measure
 getMeasure cmd e ls =
    case (isJust $ lookup cmd $ searchList e ls) of
@@ -174,15 +153,13 @@ getMeasure cmd e ls =
 
 {- for a line from any output file (from kompics) take the 
    info we need and put it in an OutputLine tuple.
-   Expects the format of three words on a line separated by space
--}
+   Expects the format of three words on a line separated by space -}
 parseLine :: String -> OutputLine
 parseLine inp =
    (read jobId::JobId,(read command::Command,read timest::TimeStamp))
       where [command,jobId,timest] = words inp
          
 {- add one item to the output hashmap
-   fst line is the jobId, snd line are the measures for the outputline
--}
+   fst line is the jobId, snd line are the measures for the outputline -}
 (+->) :: Output -> OutputLine -> Output
 out +-> line = M.insertWith (++) (fst line) [snd line] out
