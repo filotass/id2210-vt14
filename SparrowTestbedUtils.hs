@@ -8,7 +8,6 @@ import System.Directory             (getDirectoryContents)
 import System.Environment           (getArgs)
 import System.IO
 import System.FilePath.Posix        (takeFileName)
-import Numeric.Statistics
 
 {-- Used for storing information for the input.conf files --}
 data Setting = Setting
@@ -112,8 +111,8 @@ getAvg ls = div (sum ls) (toInteger $ length ls)
    @see https://answers.yahoo.com/question/index?qid=1005122102489
 -}
 get99P :: [TimeStamp] -> TimeStamp
-get99P ls = ls !! percent99
-   where percent99 = (ceiling $ (len*0.99))-1
+get99P ls = last percent99
+   where percent99 = take (ceiling (len*0.99)) (sort ls)
          len       = fromIntegral $ length (sort ls)
 
 {- Get all results for Command1 - Command2
