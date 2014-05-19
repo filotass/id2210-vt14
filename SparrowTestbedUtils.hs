@@ -1,13 +1,14 @@
 -- runhaskell SparrowTestbedUtils.hs resourcemanager/output/
 
-import Control.Monad            (forM_)
+import Control.Monad                (forM_)
 import Data.List
 import Data.Maybe
-import qualified Data.Map as M
-import System.Directory         (getDirectoryContents)
-import System.Environment       (getArgs)
+import qualified Data.Map           as M
+import System.Directory             (getDirectoryContents)
+import System.Environment           (getArgs)
 import System.IO
-import System.FilePath.Posix    (takeFileName)
+import System.FilePath.Posix        (takeFileName)
+import Numeric.Statistics
 
 {-- Used for storing information for the input.conf files --}
 data Setting = Setting
@@ -107,10 +108,12 @@ averages ls =
 getAvg :: [TimeStamp] -> TimeStamp
 getAvg ls = div (sum ls) (toInteger $ length ls)
 
-{- For a list of times, calculate 99th percentile -}
+{- For a list of times, calculate 99th percentile 
+   @see https://answers.yahoo.com/question/index?qid=1005122102489
+-}
 get99P :: [TimeStamp] -> TimeStamp
-get99P ls = div (sum percent99) (toInteger $ length percent99)
-   where percent99 = take (round (len*0.99)) ls
+get99P ls = ls !! percent99
+   where percent99 = (ceiling $ (len*0.99))-1
          len       = fromIntegral $ length (sort ls)
 
 {- Get all results for Command1 - Command2
