@@ -2,6 +2,7 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
+import common.peer.TManPeer;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ public final class TMan extends ComponentDefinition {
     private Random              r;
     private AvailableResources  availableResources;
     
-    private ArrayList<Address> view;
+    private ArrayList<TManPeer> view;
 
 
     public class TManSchedule extends Timeout {
@@ -124,9 +125,9 @@ public final class TMan extends ComponentDefinition {
   
         	TManAddressBuffer buf_p = event.getRandomBuffer();
         
-        	ArrayList<Address> temp = new ArrayList<Address>();
+        	ArrayList<TManPeer> temp = new ArrayList<TManPeer>();
         	temp.addAll(view);
-        	temp.add(self);
+        	temp.add(new TManPeer(self, availableResources));
         	TManAddressBuffer buf = new TManAddressBuffer(self, temp);
     
         	//Get a Random View ==> It is a random sample of nodes from the network using CYCLON
