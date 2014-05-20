@@ -43,6 +43,13 @@ public class Configuration {
         System.setProperty(Experiment.NUM_OF_PROBES, e.getValue(Experiment.NUM_OF_PROBES));
         System.setProperty(Experiment.NUM_OF_JOBS, e.getValue(Experiment.NUM_OF_JOBS));
         System.setProperty(Experiment.NUM_OF_NODES, e.getValue(Experiment.NUM_OF_NODES));
+        System.setProperty(Experiment.NUMBER_OF_CPUS_PER_JOB, e.getValue(Experiment.NUMBER_OF_CPUS_PER_JOB));
+        System.setProperty(Experiment.NUMBER_OF_CPUS_PER_NODE, e.getValue(Experiment.NUMBER_OF_CPUS_PER_NODE));
+        System.setProperty(Experiment.NUMBER_OF_MBS_PER_JOB, e.getValue(Experiment.NUMBER_OF_MBS_PER_JOB));
+        System.setProperty(Experiment.NUMBER_OF_MBS_PER_NODE, e.getValue(Experiment.NUMBER_OF_MBS_PER_NODE));
+        System.setProperty(Experiment.NUMBER_OF_TASKS_PER_JOB, e.getValue(Experiment.NUMBER_OF_TASKS_PER_JOB));
+        System.setProperty(Experiment.JOB_DURATION, e.getValue(Experiment.JOB_DURATION));
+        
         
         
 

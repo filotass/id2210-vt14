@@ -238,6 +238,7 @@ public final class ResourceManager extends ComponentDefinition {
             list.add(event);
                         
             if(list.size()== numProbesPerJob.get(event.getJobID())){
+            	Snapshot.report(Snapshot.PRB + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
             	SuperJob superJob = jobsFromClients.get(event.getJobID());
             	
             	// When removing events from the list, we are guaranteed to have enough elements
@@ -269,7 +270,7 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResources.ScheduleJob event) {
         	SuperJob job = event.getJob();
 
-        	Snapshot.report(Snapshot.PRB + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
         	}
@@ -315,7 +316,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
-           System.err.println("It fucking works. Fuck yeah!");
+
         }
     };
 }

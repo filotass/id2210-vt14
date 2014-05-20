@@ -29,27 +29,23 @@ public class ExperimentSimulationScenario  extends SimulationScenario{
 
 		process0 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(1000));
-			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_NODES)), Operations.peerJoin(), 
+			raise(	Integer.valueOf(System.getProperty(Experiment.NUM_OF_NODES)), 
+					Operations.peerJoin(), 
 					uniform(0, Integer.MAX_VALUE), 
-					constant(8), constant(12000)
+					constant(Integer.valueOf(System.getProperty(Experiment.NUMBER_OF_CPUS_PER_NODE))),
+					constant(Integer.valueOf(System.getProperty(Experiment.NUMBER_OF_MBS_PER_NODE)))
 					);
 		}};
 		
-//		process1 = new StochasticProcess() {{
-//			eventInterArrivalTime(constant(100));
-//			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestResources(), 
-//				  uniform(0, Integer.MAX_VALUE),
-//					constant(2), constant(2000),
-//					constant(1000) // 1 second
-//					);
-//		}};
-		
 		process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), Operations.requestBatchResources(), 
-				    uniform(0, Integer.MAX_VALUE), constant(2), // 1 = singular, +1 = batch
-					constant(2), constant(2000),
-					constant(1000) // 1 second
+			raise(Integer.valueOf(System.getProperty(Experiment.NUM_OF_JOBS)), 
+					Operations.requestBatchResources(), 
+				    uniform(0, Integer.MAX_VALUE),
+				    constant(Integer.valueOf(System.getProperty(Experiment.NUMBER_OF_TASKS_PER_JOB))), // 1 = singular, +1 = batch
+					constant(Integer.valueOf(System.getProperty(Experiment.NUMBER_OF_CPUS_PER_JOB))),
+					constant(Integer.valueOf(System.getProperty(Experiment.NUMBER_OF_MBS_PER_JOB))),
+					constant(Integer.valueOf(System.getProperty(Experiment.JOB_DURATION))) // 1 second
 					);
 		}};
 		

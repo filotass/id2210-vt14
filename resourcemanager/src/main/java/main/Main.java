@@ -24,8 +24,7 @@ public class Main {
         scenario.setSeed(seed);
         scenario.getScenario().simulate(DataCenterSimulationMain.class);
         //NOTHING RUNS AFTER THIS POINT - BELOW IS THE BLACK HOLE
-        
-        System.err.println("JAVLA SKIT");
+
   
   }
 }

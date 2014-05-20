@@ -15,7 +15,14 @@ public class Experiment implements Serializable{
 	public static final String NUM_OF_PROBES = "NUMBER_OF_PROBES";
 	public static final String NUM_OF_NODES = "NUMBER_OF_NODES";
 	public static final String NUM_OF_JOBS = "NUMBER_OF_JOBS";
+	public static final String NUMBER_OF_CPUS_PER_NODE = "NUMBER_OF_CPUS_PER_NODE";
+	public static final String NUMBER_OF_MBS_PER_NODE = "NUMBER_OF_MBS_PER_NODE";
+	public static final String NUMBER_OF_CPUS_PER_JOB = "NUMBER_OF_CPUS_PER_JOB";
+	public static final String NUMBER_OF_MBS_PER_JOB = "NUMBER_OF_MBS_PER_JOB";
+	public static final String JOB_DURATION = "JOB_DURATION";
+	public static final String NUMBER_OF_TASKS_PER_JOB = "NUMBER_OF_TASKS_PER_JOB";
 
+	
 	private Map<String,String> parameters = new HashMap<String,String>();
 	
 	public void setProperty(String variableName, String value){

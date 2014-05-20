@@ -151,8 +151,8 @@ safeCalcMeasure cmd1 cmd2 commandLs =
 
 {- try to pick from Just, in a safe manner... If not found return nothing -}
 getMeasure :: Command -> [Measure] -> Maybe Measure
-getMeasure TER ls = case (isJust $ lookup cmd (reverse ls))
-                       True  -> Just (cmd,fromJust $ lookup cmd (reverse ls))
+getMeasure SCH ls = case (isJust $ lookup SCH (reverse ls)) of
+                       True  -> Just (SCH,fromJust $ lookup SCH (reverse ls))
                        False -> Nothing
 getMeasure cmd ls = case (isJust $ lookup cmd ls) of
                        True  -> Just (cmd,fromJust $ lookup cmd ls)
