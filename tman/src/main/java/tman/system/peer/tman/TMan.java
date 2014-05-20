@@ -69,8 +69,37 @@ public final class TMan extends ComponentDefinition {
         subscribe(handleCyclonSample, cyclonSamplePort);
         subscribe(handleTManPartnersResponse, networkPort);
         subscribe(handleTManPartnersRequest, networkPort);
+        subscribe(handleAvailableResourcesRequest,  networkPort);
+        subscribe(handleAvailableResourcesResponse, networkPort);
     }
 
+    
+    /**
+     * A fellow TMan peer asks us to see our resources. We should be kind enough to reply.
+     */
+    Handler <AvailableResourcesRequest> handleAvailableResourcesRequest = new Handler<AvailableResourcesRequest>() {
+    	
+    	@Override
+    	public void handle(AvailableResourcesRequest query) {
+    		
+    		trigger(new AvailableResourcesResponse(self, query.getSource(), availableResources), networkPort);
+    	}
+    };
+    
+    /**
+     * A TMan peer has answered my request. Now I should save his information.
+     */
+    Handler <AvailableResourcesResponse> handleAvailableResourcesResponse = new Handler<AvailableResourcesResponse>() {
+    	
+    	@Override
+    	public void handle(AvailableResourcesResponse query) {
+    		
+    		// Now we know the available resources of this peer
+    		Address peer                     = query.getSource();
+    		AvailableResources peerResources = query.getAvailableResources();
+    	}
+    };
+    
     Handler<TManInit> handleInit = new Handler<TManInit>() {
         @Override
         public void handle(TManInit init) {
@@ -84,7 +113,6 @@ public final class TMan extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
             trigger(rst, timerPort);
-            
         }
     };
     
@@ -104,11 +132,9 @@ public final class TMan extends ComponentDefinition {
             List<Address> cyclonPartners = event.getSample();
 
             System.err.println("It works!");
-           
 
             tmanPartners.addAll(cyclonPartners);
             Utils.removeDuplicates(tmanPartners);
-            
         }
     };
 
