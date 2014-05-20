@@ -39,7 +39,7 @@ import tman.system.peer.tman.TManSamplePort;
  * Role 1: Acts as a Scheduler that listens for Jobs from Client Apps, probes the peer network and assigns jobs to peers.
  * Role 2: Acts as a Worker that executes the Jobs.
  *
- * @author jdowling, filotas, kristian
+ * @author jdowling, filotas,  kristian 
  */
 public final class ResourceManager extends ComponentDefinition {
 
