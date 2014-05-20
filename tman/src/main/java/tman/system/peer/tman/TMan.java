@@ -42,7 +42,7 @@ public final class TMan extends ComponentDefinition {
     Positive<Timer>             timerPort        = positive(Timer.class);
     private long                period;
     private Address             self;
-    private ArrayList<Address>  tmanPartners;
+    private ArrayList<PeerDescriptor>  tmanPartners;
     private TManConfiguration   tmanConfiguration;
     private Random              r;
     private AvailableResources  availableResources;
@@ -62,7 +62,7 @@ public final class TMan extends ComponentDefinition {
     }
 
     public TMan() {
-        tmanPartners = new ArrayList<Address>();
+        tmanPartners = new ArrayList<PeerDescriptor>();
 
         subscribe(handleInit, control);
         subscribe(handleRound, timerPort);
@@ -119,7 +119,7 @@ public final class TMan extends ComponentDefinition {
     Handler<TManSchedule> handleRound = new Handler<TManSchedule>() {
         @Override
         public void handle(TManSchedule event) {
-            Snapshot.updateTManPartners(self, tmanPartners);
+            Snapshot.updateTManPartners(new PeerDescriptor(self,availableResources), tmanPartners);
 
             // Publish sample to connected components
             trigger(new TManSample(tmanPartners), tmanPort);
@@ -129,7 +129,7 @@ public final class TMan extends ComponentDefinition {
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-            List<Address> cyclonPartners = event.getSample();
+            List<PeerDescriptor> cyclonPartners = event.getSample();
 
             System.err.println("It works!");
 

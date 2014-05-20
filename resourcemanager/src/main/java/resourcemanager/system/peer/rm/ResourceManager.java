@@ -60,7 +60,7 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Partial View of Peer Network
      */
-    ArrayList<Address> neighbours = new ArrayList<Address>();
+    ArrayList<PeerDescriptor> neighbours = new ArrayList<PeerDescriptor>();
     private Address self;
     private RmConfiguration configuration;
     Random random;
@@ -179,7 +179,7 @@ public final class ResourceManager extends ComponentDefinition {
             
             //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
-            List<Address> copyNeighbourList = new ArrayList<Address>();
+            List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
             copyNeighbourList.addAll(neighbours);
             
             // remember the job and then probe the peer network
@@ -195,7 +195,7 @@ public final class ResourceManager extends ComponentDefinition {
 	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
 	            	
 	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
-	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
+	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index).getAddress(), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
 	            	copyNeighbourList.remove(index);
 	            	trigger(req, networkPort);     	
 	            }
