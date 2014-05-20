@@ -68,7 +68,6 @@ public final class TMan extends ComponentDefinition {
         subscribe(handleCyclonSample, cyclonSamplePort);
         subscribe(handleTManPartnersResponse, networkPort);
         subscribe(handleTManPartnersRequest, networkPort);
-        
         subscribe(handleAvailableResourcesRequest,  networkPort);
         subscribe(handleAvailableResourcesResponse, networkPort);
     }
