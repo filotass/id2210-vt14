@@ -115,14 +115,7 @@ public final class TMan extends ComponentDefinition {
             randomView.clear();
             randomView.addAll(cyclonPartners);
             
-    		/* handle 	q =	gradientView.selectPeer()
-        	myDescriptor = (myAddress, 	myProfile)
-        	buf = merge(gradientView, myDescriptor)
-        	buf = merge(buf,rnd.view)
-        	send buf to q
-        	recv bufq from q
-        	buf = merge(bufq,gradientView)
-        	gradientView = selectView(buf)*/
+    	
             
             checkGradient(gradientCPU);
             checkGradient(gradientMem);
@@ -130,9 +123,9 @@ public final class TMan extends ComponentDefinition {
             
 
             PeerDescriptor selfPeerDescriptor = new PeerDescriptor(self, availableResources);
-            constructGradientAndGossip(gradientCPU, new ComparatorByCPU(selfPeerDescriptor));
-            constructGradientAndGossip(gradientMem, new ComparatorByMem(selfPeerDescriptor));
-            constructGradientAndGossip(gradientAvR, new ComparatorByAvailableResources(selfPeerDescriptor));
+            constructGradientAndGossip(gradientCPU, new ComparatorByCPU(selfPeerDescriptor),TManAddressBuffer.CPU);
+            constructGradientAndGossip(gradientMem, new ComparatorByMem(selfPeerDescriptor), TManAddressBuffer.MEMORY);
+            constructGradientAndGossip(gradientAvR, new ComparatorByAvailableResources(selfPeerDescriptor),TManAddressBuffer.AVR);
             
 
         }
@@ -146,21 +139,19 @@ public final class TMan extends ComponentDefinition {
     }
     
     
-    private void constructGradientAndGossip(ArrayList<PeerDescriptor> gradient, Comparator<? super PeerDescriptor> comparator){
-    	
+    private void constructGradientAndGossip(ArrayList<PeerDescriptor> gradient, Comparator<? super PeerDescriptor> comparator, int type){
     	
     	//WHO TO GOSHIP. Randomly selected from cyclon sample.
     	PeerDescriptor who = selectPeer(gradient,comparator);
   
+    	
+    	ArrayList<PeerDescriptor> bufToSend = new ArrayList<PeerDescriptor>();
+    	bufToSend.add(new PeerDescriptor(self, availableResources));
+    	bufToSend.addAll(gradient);
+    	bufToSend.addAll(randomView);
+    	Utils.removeDuplicates(bufToSend);
 
-    	//TODO: CHange to SelectView
-        // We call X times the softmax method where X we define as half of the number of neighbours
-        gradient = new ArrayList<PeerDescriptor>();
-        for(int i=0; i< randomView.size()/2; i++){
-        	gradient.add(getSoftMaxAddress(randomView, comparator));
-        }
-        
-        TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, gradient); 
+        TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, bufToSend, type); 
         
         //WHAT TO GOSHIP. We send a list of Descriptors of peers from calling the softmax
         new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,who.getAddress());
@@ -176,28 +167,30 @@ public final class TMan extends ComponentDefinition {
     Handler<ExchangeMsg.Request> handleTManPartnersRequest = new Handler<ExchangeMsg.Request>() {
         @Override
         public void handle(ExchangeMsg.Request event) {
-  
-        	TManAddressBuffer buf_p = event.getRandomBuffer();
-        
-        	ArrayList<PeerDescriptor> temp = new ArrayList<PeerDescriptor>();
-        	temp.addAll(randomView);
-        	temp.add(new PeerDescriptor(self, availableResources));
-        	TManAddressBuffer buf = new TManAddressBuffer(self, temp);
-    
-        	//Get a Random View ==> It is a random sample of nodes from the network using CYCLON
-        	ExchangeMsg.Response responseMsg = new ExchangeMsg.Response(event.getRequestId(), buf, self, event.getSource());
-        	trigger(responseMsg, tmanPort);
-        
-        	temp.clear();
-        	temp.addAll(randomView);
-        	temp.addAll(buf_p.getAddresses());
+        	
+        	ArrayList<PeerDescriptor> bufReceived = event.getRandomBuffer().getAddresses();
+        	int gradientType = event.getRandomBuffer().getGradientType();
         	
         	
-        	buf = new TManAddressBuffer(self, temp);
+        	List<PeerDescriptor> gradient = null;
+        	Comparator<? super PeerDescriptor> c = null;
+        	if(gradientType==TManAddressBuffer.CPU){
+        		gradient = gradientCPU;
+        		c = new ComparatorByCPU(new PeerDescriptor(self, availableResources));
+        	}else if(gradientType==TManAddressBuffer.MEMORY){
+        		gradient = gradientMem;
+        		c = new ComparatorByMem(new PeerDescriptor(self, availableResources));
+        	}else if(gradientType==TManAddressBuffer.AVR){
+        		gradient = gradientAvR;
+        		c = new ComparatorByAvailableResources(new PeerDescriptor(self, availableResources));
+        	}else{
+        		System.err.println("ERROR UNKNOWN GRADIENT TYPE");
+        		System.exit(1);
+        	}
         	
-        	//TODO call c times getSoftMaxAddress();
+        	bufReceived.addAll(gradient);
         	
-        
+        	gradient = selectView(bufReceived, c, 1);
 
         	
         }
