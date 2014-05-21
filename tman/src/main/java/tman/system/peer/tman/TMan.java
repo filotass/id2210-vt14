@@ -105,12 +105,24 @@ public final class TMan extends ComponentDefinition {
     };
 
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
+    	
+    	/*Timed event every T time units*/
+
         @Override
         public void handle(CyclonSample event) {
             List<PeerDescriptor> cyclonPartners = event.getSample();
 
             tmanPartners.clear();
             tmanPartners.addAll(cyclonPartners);
+            
+    		/* handle 	q =	gradientView.selectPeer()
+        	myDescriptor = (myAddress, 	myProfile)
+        	buf = merge(gradientView, myDescriptor)
+        	buf = merge(buf,rnd.view)
+        	send buf to q
+        	recv bufq from q
+        	buf = merge(bufq,gradientView)
+        	gradientView = selectView(buf)*/
             
 
             PeerDescriptor selfPeerDescriptor = new PeerDescriptor(self, availableResources);
