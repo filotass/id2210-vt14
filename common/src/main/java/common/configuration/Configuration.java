@@ -49,10 +49,8 @@ public class Configuration {
         System.setProperty(Experiment.NUMBER_OF_MBS_PER_NODE, e.getValue(Experiment.NUMBER_OF_MBS_PER_NODE));
         System.setProperty(Experiment.NUMBER_OF_TASKS_PER_JOB, e.getValue(Experiment.NUMBER_OF_TASKS_PER_JOB));
         System.setProperty(Experiment.JOB_DURATION, e.getValue(Experiment.JOB_DURATION));
+        System.setProperty(Experiment.TMAN_C, e.getValue(Experiment.TMAN_C));
         
-        
-        
-
         String c = File.createTempFile("bootstrap.", ".conf").getAbsolutePath();
         bootConfiguration.store(c);
         System.setProperty("bootstrap.configuration", c);

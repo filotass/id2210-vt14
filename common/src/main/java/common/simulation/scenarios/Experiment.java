@@ -21,6 +21,7 @@ public class Experiment implements Serializable{
 	public static final String NUMBER_OF_MBS_PER_JOB = "NUMBER_OF_MBS_PER_JOB";
 	public static final String JOB_DURATION = "JOB_DURATION";
 	public static final String NUMBER_OF_TASKS_PER_JOB = "NUMBER_OF_TASKS_PER_JOB";
+	public static final String TMAN_C = "TMAN_C";
 
 
 	

@@ -32,7 +32,7 @@ public class TManAddressBuffer implements Serializable {
 
 
 	public int getSize() {
-		return gradient.getEntried().size();
+		return gradient.getEntries().size();
 	}
 	
 	public Gradient getGradient(){
@@ -41,7 +41,7 @@ public class TManAddressBuffer implements Serializable {
 
 
 	public List<PeerDescriptor> getAddresses() {
-		return gradient.getEntried();
+		return gradient.getEntries();
 	}
 	
 

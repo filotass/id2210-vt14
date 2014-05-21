@@ -1,6 +1,7 @@
 package tman.system.peer.tman.gradient;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -15,19 +16,24 @@ import cyclon.system.peer.cyclon.PeerDescriptor;
  * @author kristian
  *
  */
-public abstract class Gradient implements Serializable {
+public class Gradient implements Serializable {
 	
 	private static final long serialVersionUID = -5489515024758468494L;
 	private List<PeerDescriptor> entries;
 	private Comparator<? super PeerDescriptor> comparator;
+	private int type;
 	
-	public Gradient(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator) {
-		
+	public static final int TYPE_CPU=0;
+	public static final int TYPE_MEM=1;
+	public static final int TYPE_COMBO=2;
+	
+	public Gradient(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator, int type) {
+		this.type = type;
 		this.entries = entries;
 		this.comparator = comparator;
 	}
 	
-	public List<PeerDescriptor> getEntried() {
+	public List<PeerDescriptor> getEntries() {
 		return entries;
 	}
 	
@@ -43,20 +49,20 @@ public abstract class Gradient implements Serializable {
 		return (entries.size()==0);
 	}
 	
+	public void addEntry(PeerDescriptor p){
+		entries.add(p);
+	}
+	
+	public void addEntry(Collection<PeerDescriptor> p){
+		entries.addAll(p);
+	}
+	
 	public Comparator<? super PeerDescriptor> getComparator() {
 		return comparator;
 	}
 	
-	public boolean isCPUbased(){
-		return false;
-	}
-	
-	public boolean isMEMbased(){
-		return false;
-	}
-	
-	public boolean isCOMBObased(){
-		return false;
+	public int getType() {
+		return type;
 	}
 	
 	
