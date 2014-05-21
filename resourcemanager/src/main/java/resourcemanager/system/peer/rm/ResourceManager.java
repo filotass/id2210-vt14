@@ -33,6 +33,7 @@ import simulator.snapshot.Snapshot;
 import system.peer.RmPort;
 import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
+import tman.system.peer.tman.gradient.Gradient;
 
 /**
  * Resource Manager has 2 main independent roles.
@@ -99,6 +100,12 @@ public final class ResourceManager extends ComponentDefinition {
      */
     private AvailableResources availableResources;
     
+    /**
+     * Task 2: Gradients received from TMan
+     */
+    private Gradient gradientCPU;
+    private Gradient gradientMEM;
+    private Gradient gradientCombo;
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -151,8 +158,8 @@ public final class ResourceManager extends ComponentDefinition {
             }
             // TODO: Implement
             //Address dest = neighbours.get(random.nextInt(neighbours.size()));
-
-
+            
+            
         }
     };
     
@@ -184,16 +191,37 @@ public final class ResourceManager extends ComponentDefinition {
             
             // remember the job and then probe the peer network
             jobsFromClients.put(event.getId(), event);
+
+            // Define what gradient to use for finding the available resources...
+            Gradient gradientToUse = null;
+            
+            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
+            if(event.getMemoryInMbs() == 0) {
+            	
+            	gradientToUse = gradientCPU;
+            
+            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
+            } else if(event.getNumCpus() == 0) {
+            	
+            	gradientToUse = gradientMEM;
+            
+            // Else, if we need both memory and cpu, lets use the combined gradient
+            // which uses multiplication of the normalized values of both CPU and MEM. 
+            } else {
+            	
+            	gradientToUse = gradientCombo;
+            }
             
             //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
-            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()){
+            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()) {
+            	
 	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumOfTasks(), neighbours.size()));
 	            
-	            if(numProbesPerJob.get(event.getId()) != 0){
+	            if(numProbesPerJob.get(event.getId()) != 0) {
 	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
 	            }
-	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
-	            	
+	            
+	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++) {	
 	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
 	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index).getAddress(), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
 	            	copyNeighbourList.remove(index);
@@ -202,8 +230,6 @@ public final class ResourceManager extends ComponentDefinition {
             }
         }
     };
-    
-    
     
     /**
      *  Role of Worker. Listening incoming ResourceAllocationRequests from Schedulers that probe this Worker.
@@ -313,10 +339,34 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
+    /**
+     * We are listening to this peer's TMan layer. 
+     */
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
+    	
         @Override
         public void handle(TManSample event) {
-
+        	
+        	Gradient newGradient = event.getSample();
+        	
+        	// Determine the type of this received gradient... 
+        	if(newGradient.getType() == Gradient.TYPE_CPU) {
+        		
+        		gradientCPU = newGradient;
+        		
+        	} else if(newGradient.getType() == Gradient.TYPE_MEM) {
+        		
+        		gradientMEM = newGradient;
+        		
+        	} else if(newGradient.getType() == Gradient.TYPE_COMBO) {
+        		
+        		gradientCombo = newGradient;
+        		
+        	}else {
+        		
+        		System.err.println("ERROR UNKNOWN GRADIENT TYPE");
+        		System.exit(1);
+        	}
         }
     };
 }

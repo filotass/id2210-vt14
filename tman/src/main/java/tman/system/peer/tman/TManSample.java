@@ -1,27 +1,24 @@
 package tman.system.peer.tman;
 
-import java.util.ArrayList;
-
-
-
-import cyclon.system.peer.cyclon.PeerDescriptor;
 import se.sics.kompics.Event;
-import se.sics.kompics.address.Address;
+import tman.system.peer.tman.gradient.Gradient;
 
-
+/**
+ * A sample given from TMan to everyone interested.
+ * In our case the ResourceManager is listening.
+ * 
+ * @author kristian
+ *
+ */
 public class TManSample extends Event {
-	ArrayList<PeerDescriptor> partners = new ArrayList<PeerDescriptor>();
+	
+	private Gradient gradient;
 
-
-	public TManSample(ArrayList<PeerDescriptor> partners) {
-		this.partners = partners;
-	}
-        
-	public TManSample() {
+	public TManSample(Gradient newGradient) {
+		this.gradient = newGradient;
 	}
 
-
-	public ArrayList<PeerDescriptor> getSample() {
-		return this.partners;
+	public Gradient getSample() {
+		return this.gradient;
 	}
 }
