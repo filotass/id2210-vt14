@@ -188,6 +188,42 @@ public final class TMan extends ComponentDefinition {
     };
 
     /**
+     * Get a list of PeerDescriptors (view), and return a random peer from the 
+     * highest ranked half of the list.
+     * 
+     * @param view
+     * @param comparator
+     * @return
+     */
+    private PeerDescriptor selectPeer(List<PeerDescriptor> view, Comparator<? super PeerDescriptor> comparator) {
+    	
+    	List<PeerDescriptor> halfList = selectView(view, comparator);
+    	
+    	return halfList.get((int) (Math.random() * halfList.size()) - 1);
+    }
+    
+    /**
+     * Get a list of PeerDescriptors (view) which is supposed to be twice the size
+     * of a partial view. In this process keep half of the input list (the highest
+     * ranked PeerDescriptors)
+     * 
+     * @return
+     */
+    private List<PeerDescriptor> selectView(List<PeerDescriptor> view, Comparator<? super PeerDescriptor> comparator) {
+    	
+    	Collections.sort(view, comparator);
+    	
+    	List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
+    	
+    	for(int i = 0; i < view.size()/2; i ++) {
+    		
+    		returnList.add(view.get(i));
+    	}
+    	
+    	return returnList;
+    }
+    
+    /**
      * This node has requested to see availableResources of another resource and
      * now availableResources are returned to us.
      */
