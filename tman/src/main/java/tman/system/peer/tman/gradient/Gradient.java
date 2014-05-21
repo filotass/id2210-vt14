@@ -15,10 +15,10 @@ import cyclon.system.peer.cyclon.PeerDescriptor;
  * @author kristian
  *
  */
-public class Gradient implements Serializable {
+public abstract class Gradient implements Serializable {
 	
 	private static final long serialVersionUID = -5489515024758468494L;
-	private final List<PeerDescriptor> entries;
+	private List<PeerDescriptor> entries;
 	private Comparator<? super PeerDescriptor> comparator;
 	
 	public Gradient(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator) {
@@ -31,7 +31,33 @@ public class Gradient implements Serializable {
 		return entries;
 	}
 	
+	public void setEntries(List<PeerDescriptor> entries){
+		this.entries = entries;
+	}
+	
+	public int getSize(){
+		return entries.size();
+	}
+	
+	public boolean isEmpty(){
+		return (entries.size()==0);
+	}
+	
 	public Comparator<? super PeerDescriptor> getComparator() {
 		return comparator;
 	}
+	
+	public boolean isCPUbased(){
+		return false;
+	}
+	
+	public boolean isMEMbased(){
+		return false;
+	}
+	
+	public boolean isCOMBObased(){
+		return false;
+	}
+	
+	
 }

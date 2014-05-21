@@ -19,4 +19,8 @@ public class GradientMEM extends Gradient {
 			Comparator<? super PeerDescriptor> comparator) {
 		super(entries, comparator);
 	}
+	
+	public boolean isMEMbased(){
+		return true;
+	}
 }

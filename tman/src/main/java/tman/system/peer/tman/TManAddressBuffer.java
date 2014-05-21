@@ -1,30 +1,28 @@
 package tman.system.peer.tman;
 
-import java.io.ObjectInputStream.GetField;
+
 import java.io.Serializable;
-import java.util.ArrayList;
+
+import java.util.List;
 
 import cyclon.system.peer.cyclon.PeerDescriptor;
 import se.sics.kompics.address.Address;
+import tman.system.peer.tman.gradient.Gradient;
 
 
 public class TManAddressBuffer implements Serializable {
 
 	private static final long serialVersionUID = 7555581949994578697L;
 	private final Address from;
-	private final ArrayList<PeerDescriptor> addresses;
-	private int typeOfGradient;
+	private final Gradient gradient;
 	
-	public static int MEMORY = 0;
-	public static int CPU = 1;
-	public static int AVR = 2;
 
 
-	public TManAddressBuffer(Address from,ArrayList<PeerDescriptor> addresses, int typeOfGradient) {
+
+	public TManAddressBuffer(Address from,Gradient gradient) {
 		super();
 		this.from = from;
-		this.addresses = addresses;
-		this.typeOfGradient = typeOfGradient;
+		this.gradient = gradient;
 	}
 
 
@@ -34,15 +32,17 @@ public class TManAddressBuffer implements Serializable {
 
 
 	public int getSize() {
-		return addresses.size();
-	}
-
-
-	public ArrayList<PeerDescriptor> getAddresses() {
-		return addresses;
+		return gradient.getEntried().size();
 	}
 	
-	public int getGradientType(){
-		return typeOfGradient;
+	public Gradient getGradient(){
+		return gradient;
 	}
+
+
+	public List<PeerDescriptor> getAddresses() {
+		return gradient.getEntried();
+	}
+	
+
 }

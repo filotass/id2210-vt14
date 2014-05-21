@@ -19,4 +19,8 @@ public class GradientCPU extends Gradient {
 			Comparator<? super PeerDescriptor> comparator) {
 		super(entries, comparator);
 	}
+	
+	public boolean isCPUbased(){
+		return true;
+	}
 }

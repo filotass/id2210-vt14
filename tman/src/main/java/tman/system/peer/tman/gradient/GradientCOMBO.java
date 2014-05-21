@@ -19,4 +19,8 @@ public class GradientCOMBO extends Gradient {
 			Comparator<? super PeerDescriptor> comparator) {
 		super(entries, comparator);
 	}
+	
+	public boolean isCOMBObased(){
+		return true;
+	}
 }
