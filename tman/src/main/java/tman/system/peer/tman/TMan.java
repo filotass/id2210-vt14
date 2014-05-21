@@ -2,20 +2,19 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
-import common.peer.TManPeer;
+
+import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
-import cyclon.system.peer.cyclon.DescriptorBuffer;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -47,7 +46,13 @@ public final class TMan extends ComponentDefinition {
     private Random              r;
     private AvailableResources  availableResources;
     
-    private ArrayList<TManPeer> view;
+    
+    private ArrayList<PeerDescriptor> gradientCPU;
+    private ArrayList<PeerDescriptor> gradientMem;
+    private ArrayList<PeerDescriptor> gradientAvR;
+    
+    
+
 
 
     public class TManSchedule extends Timeout {
@@ -69,36 +74,9 @@ public final class TMan extends ComponentDefinition {
         subscribe(handleCyclonSample, cyclonSamplePort);
         subscribe(handleTManPartnersResponse, networkPort);
         subscribe(handleTManPartnersRequest, networkPort);
-        subscribe(handleAvailableResourcesRequest,  networkPort);
-        subscribe(handleAvailableResourcesResponse, networkPort);
+
     }
 
-    
-    /**
-     * A fellow TMan peer asks us to see our resources. We should be kind enough to reply.
-     */
-    Handler <AvailableResourcesRequest> handleAvailableResourcesRequest = new Handler<AvailableResourcesRequest>() {
-    	
-    	@Override
-    	public void handle(AvailableResourcesRequest query) {
-    		
-    		trigger(new AvailableResourcesResponse(self, query.getSource(), availableResources), networkPort);
-    	}
-    };
-    
-    /**
-     * A TMan peer has answered my request. Now I should save his information.
-     */
-    Handler <AvailableResourcesResponse> handleAvailableResourcesResponse = new Handler<AvailableResourcesResponse>() {
-    	
-    	@Override
-    	public void handle(AvailableResourcesResponse query) {
-    		
-    		// Now we know the available resources of this peer
-    		Address peer                     = query.getSource();
-    		AvailableResources peerResources = query.getAvailableResources();
-    	}
-    };
     
     Handler<TManInit> handleInit = new Handler<TManInit>() {
         @Override
@@ -131,12 +109,34 @@ public final class TMan extends ComponentDefinition {
         public void handle(CyclonSample event) {
             List<PeerDescriptor> cyclonPartners = event.getSample();
 
-            System.err.println("It works!");
-
+            tmanPartners.clear();
             tmanPartners.addAll(cyclonPartners);
-            Utils.removeDuplicates(tmanPartners);
+            
+
+            PeerDescriptor selfPeerDescriptor = new PeerDescriptor(self, availableResources);
+            constructGradientAndGossip(gradientCPU, new ComparatorByCPU(selfPeerDescriptor));
+            constructGradientAndGossip(gradientMem, new ComparatorByMem(selfPeerDescriptor));
+            constructGradientAndGossip(gradientAvR, new ComparatorByAvailableResources(selfPeerDescriptor));
+            
+
         }
     };
+    
+    
+    private void constructGradientAndGossip(ArrayList<PeerDescriptor> gradient, Comparator<? super PeerDescriptor> comparator){
+    	//WHO TO GOSHIP. Randomly selected from cyclon sample.
+    	int index = (int) Math.round(Math.random()*(tmanPartners.size()-1));
+
+        // We call X times the softmax method where X we define as half of the number of neighbours
+        gradient = new ArrayList<PeerDescriptor>();
+        for(int i=0; i< tmanPartners.size()/2; i++){
+        	gradient.add(getSoftMaxAddress(tmanPartners, comparator));
+        }
+        TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, gradient); 
+        
+        //WHAT TO GOSHIP. We send a list of Descriptors of peers from calling the softmax
+        new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,tmanPartners.get(index).getAddress());
+    }
 
     /**
      * When handling a request,  
@@ -151,9 +151,9 @@ public final class TMan extends ComponentDefinition {
   
         	TManAddressBuffer buf_p = event.getRandomBuffer();
         
-        	ArrayList<TManPeer> temp = new ArrayList<TManPeer>();
-        	temp.addAll(view);
-        	temp.add(new TManPeer(self, availableResources));
+        	ArrayList<PeerDescriptor> temp = new ArrayList<PeerDescriptor>();
+        	temp.addAll(tmanPartners);
+        	temp.add(new PeerDescriptor(self, availableResources));
         	TManAddressBuffer buf = new TManAddressBuffer(self, temp);
     
         	//Get a Random View ==> It is a random sample of nodes from the network using CYCLON
@@ -161,7 +161,7 @@ public final class TMan extends ComponentDefinition {
         	trigger(responseMsg, tmanPort);
         
         	temp.clear();
-        	temp.addAll(view);
+        	temp.addAll(tmanPartners);
         	temp.addAll(buf_p.getAddresses());
         	
         	
@@ -171,7 +171,6 @@ public final class TMan extends ComponentDefinition {
         	
         
 
-        	
         	
         }
     };
@@ -196,8 +195,8 @@ public final class TMan extends ComponentDefinition {
     // A temperature of '0.0' will throw a divide by zero exception :)
     // Reference:
     // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
-    public Address getSoftMaxAddress(List<Address> entries) {
-        Collections.sort(entries, new ComparatorById(self));
+    public PeerDescriptor getSoftMaxAddress(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator) {
+        Collections.sort(entries, comparator);
 
         double rnd = r.nextDouble();
         double total = 0.0d;
@@ -215,7 +214,7 @@ public final class TMan extends ComponentDefinition {
             if (i != 0) {
                 values[i] += values[i - 1];
             }
-            // normalise the probability for this entry
+            // normalize the probability for this entry
             double normalisedUtility = values[i] / total;
             if (normalisedUtility >= rnd) {
                 return entries.get(i);

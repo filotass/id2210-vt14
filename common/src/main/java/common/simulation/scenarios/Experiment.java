@@ -22,6 +22,7 @@ public class Experiment implements Serializable{
 	public static final String JOB_DURATION = "JOB_DURATION";
 	public static final String NUMBER_OF_TASKS_PER_JOB = "NUMBER_OF_TASKS_PER_JOB";
 
+
 	
 	private Map<String,String> parameters = new HashMap<String,String>();
 	
