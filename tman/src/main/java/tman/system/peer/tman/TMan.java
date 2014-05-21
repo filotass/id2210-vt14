@@ -41,7 +41,7 @@ public final class TMan extends ComponentDefinition {
     Positive<Timer>             timerPort        = positive(Timer.class);
     private long                period;
     private Address             self;
-    private ArrayList<PeerDescriptor>  tmanPartners;
+    private ArrayList<PeerDescriptor>  randomView;
     private TManConfiguration   tmanConfiguration;
     private Random              r;
     private AvailableResources  availableResources;
@@ -67,7 +67,7 @@ public final class TMan extends ComponentDefinition {
     }
 
     public TMan() {
-        tmanPartners = new ArrayList<PeerDescriptor>();
+        randomView = new ArrayList<PeerDescriptor>();
 
         subscribe(handleInit, control);
         subscribe(handleRound, timerPort);
@@ -97,10 +97,10 @@ public final class TMan extends ComponentDefinition {
     Handler<TManSchedule> handleRound = new Handler<TManSchedule>() {
         @Override
         public void handle(TManSchedule event) {
-            Snapshot.updateTManPartners(new PeerDescriptor(self,availableResources), tmanPartners);
+            Snapshot.updateTManPartners(new PeerDescriptor(self,availableResources), randomView);
 
             // Publish sample to connected components
-            trigger(new TManSample(tmanPartners), tmanPort);
+            trigger(new TManSample(randomView), tmanPort);
         }
     };
 
@@ -112,8 +112,8 @@ public final class TMan extends ComponentDefinition {
         public void handle(CyclonSample event) {
             List<PeerDescriptor> cyclonPartners = event.getSample();
 
-            tmanPartners.clear();
-            tmanPartners.addAll(cyclonPartners);
+            randomView.clear();
+            randomView.addAll(cyclonPartners);
             
     		/* handle 	q =	gradientView.selectPeer()
         	myDescriptor = (myAddress, 	myProfile)
@@ -123,6 +123,10 @@ public final class TMan extends ComponentDefinition {
         	recv bufq from q
         	buf = merge(bufq,gradientView)
         	gradientView = selectView(buf)*/
+            
+            checkGradient(gradientCPU);
+            checkGradient(gradientMem);
+            checkGradient(gradientAvR);
             
 
             PeerDescriptor selfPeerDescriptor = new PeerDescriptor(self, availableResources);
@@ -134,20 +138,32 @@ public final class TMan extends ComponentDefinition {
         }
     };
     
+    private void checkGradient(List<PeerDescriptor> gradient){
+        if(gradient==null){
+        	gradient = new ArrayList<PeerDescriptor>();
+        	gradient.addAll(randomView);
+        }
+    }
+    
     
     private void constructGradientAndGossip(ArrayList<PeerDescriptor> gradient, Comparator<? super PeerDescriptor> comparator){
+    	
+    	
     	//WHO TO GOSHIP. Randomly selected from cyclon sample.
-    	int index = (int) Math.round(Math.random()*(tmanPartners.size()-1));
+    	PeerDescriptor who = selectPeer(gradient,comparator);
+  
 
+    	//TODO: CHange to SelectView
         // We call X times the softmax method where X we define as half of the number of neighbours
         gradient = new ArrayList<PeerDescriptor>();
-        for(int i=0; i< tmanPartners.size()/2; i++){
-        	gradient.add(getSoftMaxAddress(tmanPartners, comparator));
+        for(int i=0; i< randomView.size()/2; i++){
+        	gradient.add(getSoftMaxAddress(randomView, comparator));
         }
+        
         TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, gradient); 
         
         //WHAT TO GOSHIP. We send a list of Descriptors of peers from calling the softmax
-        new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,tmanPartners.get(index).getAddress());
+        new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,who.getAddress());
     }
 
     /**
@@ -164,7 +180,7 @@ public final class TMan extends ComponentDefinition {
         	TManAddressBuffer buf_p = event.getRandomBuffer();
         
         	ArrayList<PeerDescriptor> temp = new ArrayList<PeerDescriptor>();
-        	temp.addAll(tmanPartners);
+        	temp.addAll(randomView);
         	temp.add(new PeerDescriptor(self, availableResources));
         	TManAddressBuffer buf = new TManAddressBuffer(self, temp);
     
@@ -173,7 +189,7 @@ public final class TMan extends ComponentDefinition {
         	trigger(responseMsg, tmanPort);
         
         	temp.clear();
-        	temp.addAll(tmanPartners);
+        	temp.addAll(randomView);
         	temp.addAll(buf_p.getAddresses());
         	
         	
@@ -197,7 +213,7 @@ public final class TMan extends ComponentDefinition {
      */
     private PeerDescriptor selectPeer(List<PeerDescriptor> view, Comparator<? super PeerDescriptor> comparator) {
     	
-    	List<PeerDescriptor> halfList = selectView(view, comparator);
+    	List<PeerDescriptor> halfList = selectView(view, comparator, view.size()/2);
     	
     	return halfList.get((int) (Math.random() * halfList.size()) - 1);
     }
@@ -209,14 +225,13 @@ public final class TMan extends ComponentDefinition {
      * 
      * @return
      */
-    private List<PeerDescriptor> selectView(List<PeerDescriptor> view, Comparator<? super PeerDescriptor> comparator) {
+    private List<PeerDescriptor> selectView(List<PeerDescriptor> view, Comparator<? super PeerDescriptor> comparator, int c) {
     	
     	Collections.sort(view, comparator);
     	
     	List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
     	
-    	for(int i = 0; i < view.size()/2; i ++) {
-    		
+    	for(int i = 0; i < c; i ++) {
     		returnList.add(view.get(i));
     	}
     	
