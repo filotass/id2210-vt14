@@ -53,7 +53,7 @@ public class Gradient implements Serializable {
 		entries.add(p);
 	}
 	
-	public void addEntry(Collection<PeerDescriptor> p){
+	public void addEntries(Collection<PeerDescriptor> p){
 		entries.addAll(p);
 	}
 	

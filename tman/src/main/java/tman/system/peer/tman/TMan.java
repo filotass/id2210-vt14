@@ -1,6 +1,5 @@
 package tman.system.peer.tman;
 
-import common.configuration.Configuration;
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
 import common.simulation.scenarios.Experiment;
@@ -55,6 +54,8 @@ public final class TMan extends ComponentDefinition {
     private Gradient gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(selfPeerDescriptor),Gradient.TYPE_COMBO);
     
  
+    private int c = Integer.parseInt(System.getProperty(Experiment.TMAN_C));
+    
     public class TManSchedule extends Timeout {
 
         public TManSchedule(SchedulePeriodicTimeout request) {
@@ -68,7 +69,6 @@ public final class TMan extends ComponentDefinition {
 
     public TMan() {
         randomView = new ArrayList<PeerDescriptor>();
-
         subscribe(handleInit, control);
         subscribe(handleRound, timerPort);
         subscribe(handleCyclonSample, cyclonSamplePort);
@@ -124,7 +124,6 @@ public final class TMan extends ComponentDefinition {
     };
 
     
-    
     private void constructGradientAndGossip(Gradient gradient){
     	
     	if(gradient.isEmpty()){
@@ -165,18 +164,72 @@ public final class TMan extends ComponentDefinition {
         	
         	Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(),gradientReceived.getComparator(), gradientReceived.getType());
         	gradientToRespond.addEntry(selfPeerDescriptor);
-        	gradientToRespond.addEntry(randomView);
+        	gradientToRespond.addEntries(randomView);
         	
+        	TManAddressBuffer tManAddressBuffer = new TManAddressBuffer(self, gradientToRespond);
+        	
+        	trigger(new ExchangeMsg.Response(event.getRequestId(), tManAddressBuffer, self, event.getSource()),networkPort);
         	
         	Gradient relatedGradient = getCorrectGradient(gradientReceived);
 
-        	gradientReceived.getEntries().addAll(relatedGradient.getEntries());
+        	gradientReceived.addEntries(relatedGradient.getEntries());
         	
-        	int c = Integer.parseInt(System.getProperty(Experiment.TMAN_C));
         	relatedGradient.setEntries(selectView(gradientReceived,c));
         	
         }
     };
+    
+    
+    
+    /**
+     * This node has requested to see availableResources of another resource and
+     * now availableResources are returned to us.
+     */
+    Handler<ExchangeMsg.Response> handleTManPartnersResponse = new Handler<ExchangeMsg.Response>() {
+        @Override
+        public void handle(ExchangeMsg.Response event) {
+        	Gradient receivedGradient = event.getSelectedBuffer().getGradient();
+        	Gradient view = getCorrectGradient(receivedGradient);
+        	receivedGradient.addEntries(view.getEntries());
+        	view.setEntries(selectView(receivedGradient, c));
+        }
+    };
+
+    // TODO - if you call this method with a list of entries, it will
+    // return a single node, weighted towards the 'best' node (as defined by
+    // ComparatorById) with the temperature controlling the weighting.
+    // A temperature of '1.0' will be greedy and always return the best node.
+    // A temperature of '0.000001' will return a random node.
+    // A temperature of '0.0' will throw a divide by zero exception :)
+    // Reference:
+    // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
+    public PeerDescriptor getSoftMaxAddress(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator) {
+        Collections.sort(entries, comparator);
+
+        double rnd = r.nextDouble();
+        double total = 0.0d;
+        double[] values = new double[entries.size()];
+        int j = entries.size() + 1;
+        for (int i = 0; i < entries.size(); i++) {
+            // get inverse of values - lowest have highest value.
+            double val = j;
+            j--;
+            values[i] = Math.exp(val / tmanConfiguration.getTemperature());
+            total += values[i];
+        }
+
+        for (int i = 0; i < values.length; i++) {
+            if (i != 0) {
+                values[i] += values[i - 1];
+            }
+            // normalize the probability for this entry
+            double normalisedUtility = values[i] / total;
+            if (normalisedUtility >= rnd) {
+                return entries.get(i);
+            }
+        }
+        return entries.get(entries.size() - 1);
+    }
     
     private Gradient getCorrectGradient(Gradient gradientReceived){
     	Gradient temp = null;
@@ -230,54 +283,6 @@ public final class TMan extends ComponentDefinition {
     	}
     	
     	return returnList;
-    }
-    
-    /**
-     * This node has requested to see availableResources of another resource and
-     * now availableResources are returned to us.
-     */
-    Handler<ExchangeMsg.Response> handleTManPartnersResponse = new Handler<ExchangeMsg.Response>() {
-        @Override
-        public void handle(ExchangeMsg.Response event) {
-        	
-      
-        }
-    };
-
-    // TODO - if you call this method with a list of entries, it will
-    // return a single node, weighted towards the 'best' node (as defined by
-    // ComparatorById) with the temperature controlling the weighting.
-    // A temperature of '1.0' will be greedy and always return the best node.
-    // A temperature of '0.000001' will return a random node.
-    // A temperature of '0.0' will throw a divide by zero exception :)
-    // Reference:
-    // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
-    public PeerDescriptor getSoftMaxAddress(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator) {
-        Collections.sort(entries, comparator);
-
-        double rnd = r.nextDouble();
-        double total = 0.0d;
-        double[] values = new double[entries.size()];
-        int j = entries.size() + 1;
-        for (int i = 0; i < entries.size(); i++) {
-            // get inverse of values - lowest have highest value.
-            double val = j;
-            j--;
-            values[i] = Math.exp(val / tmanConfiguration.getTemperature());
-            total += values[i];
-        }
-
-        for (int i = 0; i < values.length; i++) {
-            if (i != 0) {
-                values[i] += values[i - 1];
-            }
-            // normalize the probability for this entry
-            double normalisedUtility = values[i] / total;
-            if (normalisedUtility >= rnd) {
-                return entries.get(i);
-            }
-        }
-        return entries.get(entries.size() - 1);
     }
 
 }

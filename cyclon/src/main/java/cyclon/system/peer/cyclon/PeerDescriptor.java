@@ -12,12 +12,7 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 	private final Address peerAddress;
 	private int age;
 	private AvailableResources avr;
-/*
-	public PeerDescriptor(Address peerAddress) {
-		this.peerAddress = peerAddress;
-		this.age = 0;
-	}
-	*/
+
 	public PeerDescriptor(Address peerAddress,AvailableResources avr) {
 		this.peerAddress = peerAddress;
 		this.age = 0;
