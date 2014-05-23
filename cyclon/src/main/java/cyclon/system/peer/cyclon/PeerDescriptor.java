@@ -12,11 +12,13 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 	private final Address peerAddress;
 	private int age;
 	private AvailableResources avr;
+	private int queueSize;
 
-	public PeerDescriptor(Address peerAddress,AvailableResources avr) {
+	public PeerDescriptor(Address peerAddress,AvailableResources avr, int queueSize) {
 		this.peerAddress = peerAddress;
 		this.age = 0;
 		this.avr = avr;
+		this.queueSize =queueSize;
 	}
 
 	public int incrementAndGetAge() {
@@ -37,6 +39,9 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 		return avr;
 	}
 
+	public int getQueueSize() {
+		return queueSize;
+	}
 
 	@Override
 	public int compareTo(PeerDescriptor that) {

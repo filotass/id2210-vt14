@@ -2,6 +2,8 @@ package cyclon.system.peer.cyclon;
 
 import common.configuration.CyclonConfiguration;
 import common.peer.AvailableResources;
+import common.simulation.SuperJob;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -16,7 +18,6 @@ import se.sics.kompics.timer.CancelTimeout;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
-
 import se.sics.kompics.address.Address;
 
 public final class Cyclon extends ComponentDefinition {
@@ -36,7 +37,8 @@ public final class Cyclon extends ComponentDefinition {
 	private CyclonConfiguration cyclonConfiguration;
 	private HashMap<UUID, Address> outstandingRandomShuffles;
 
-        private AvailableResources availableResources;
+   private AvailableResources availableResources;
+   private ArrayList<SuperJob> queueJobs;
 	
 	public Cyclon() {
 		outstandingRandomShuffles = new HashMap<UUID, Address>();
@@ -54,7 +56,8 @@ public final class Cyclon extends ComponentDefinition {
 	Handler<CyclonInit> handleInit = new Handler<CyclonInit>() {
 		public void handle(CyclonInit init) {
 			cyclonConfiguration = init.getConfiguration();
-                        availableResources = init.getAvailableResources();
+            availableResources = init.getAvailableResources();
+            queueJobs = init.getQueueJobs();
 			shuffleLength = cyclonConfiguration.getShuffleLength();
 			shufflePeriod = cyclonConfiguration.getShufflePeriod();
 			shuffleTimeout = cyclonConfiguration.getShuffleTimeout();
@@ -102,7 +105,7 @@ public final class Cyclon extends ComponentDefinition {
 	private void initiateShuffle(int shuffleSize, Address randomPeer) {
 		// send the random view to a random peer
 		ArrayList<PeerDescriptor> randomDescriptors = cache.selectToSendAtActive(shuffleSize - 1, randomPeer);
-		randomDescriptors.add(new PeerDescriptor(self,availableResources));
+		randomDescriptors.add(new PeerDescriptor(self,availableResources, queueJobs.size()));
 		DescriptorBuffer randomBuffer = new DescriptorBuffer(self, randomDescriptors);
 		
 		ScheduleTimeout rst = new ScheduleTimeout(shuffleTimeout);

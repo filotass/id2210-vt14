@@ -31,9 +31,9 @@ import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import simulator.snapshot.Snapshot;
 import system.peer.RmPort;
+import tman.system.peer.tman.Gradient;
 import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
-import tman.system.peer.tman.gradient.Gradient;
 
 /**
  * Resource Manager has 2 main independent roles.
@@ -69,7 +69,7 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Used for role of Worker. Queues Jobs that are assigned from Schedulers.
      */
-    private List<SuperJob> queuedJobs = new ArrayList<SuperJob>();
+    private List<SuperJob> queuedJobs;
     
     private List<SuperJob> runningJobs = new ArrayList<SuperJob>();
     
@@ -78,7 +78,7 @@ public final class ResourceManager extends ComponentDefinition {
      */
     private Map<Long,List<RequestResources.Response>> probesReceived = new HashMap<Long, List<RequestResources.Response>>();
     
-    
+ 
     /**
      * Used for role of Scheduler. Holds the Number of probes per Job.
      */
@@ -139,6 +139,7 @@ public final class ResourceManager extends ComponentDefinition {
             NUM_PROBES = Integer.parseInt(System.getProperty(Experiment.NUM_OF_PROBES));
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
+            queuedJobs = init.getQueueJobs();
             long period = configuration.getPeriod();
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateTimeout(rst));
@@ -212,8 +213,9 @@ public final class ResourceManager extends ComponentDefinition {
             	List<PeerDescriptor> peers = gradientToUse.getEntries();
 
             }
+            int rndIndex = (int) Math.random() * gradientToUse.getEntries().size();
           
-            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(0).getAddress(),event);
+            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(rndIndex).getAddress(),event);
             trigger(schJob, networkPort);
             
             //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
@@ -301,6 +303,8 @@ public final class ResourceManager extends ComponentDefinition {
         	SuperJob job = event.getJob();
         	Snapshot.report(Snapshot.ASN + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
+        	System.out.println("HANDLE INCOMING JOB, MY RESOURCES ARE: " + availableResources+ " Queue size="+queuedJobs.size());
+        	
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
         	}

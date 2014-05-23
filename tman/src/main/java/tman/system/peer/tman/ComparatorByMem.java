@@ -10,7 +10,11 @@ public class ComparatorByMem implements Comparator<PeerDescriptor>{
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
 		int aMem = a.getAvailableResources().getFreeMemInMbs();
 		int bMem = b.getAvailableResources().getFreeMemInMbs();
-			
-		return bMem - aMem;
+		
+		if(bMem - aMem != 0){
+			return bMem - aMem;
+		}
+
+		return a.getQueueSize() - b.getQueueSize();
 	}
 }

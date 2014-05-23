@@ -53,4 +53,8 @@ public class AvailableResources {
     public int getFreeMemInMbs() {
         return freeMemInMbs;
     }
+    
+    public String toString(){
+    	return "CPUs ="+this.numFreeCpus + "Mem_Mbs ="+this.freeMemInMbs;
+    }
 }

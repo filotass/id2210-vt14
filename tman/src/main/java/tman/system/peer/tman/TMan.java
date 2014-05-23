@@ -2,6 +2,7 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
+import common.simulation.SuperJob;
 import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
@@ -30,7 +31,6 @@ import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 import se.sics.kompics.timer.Timer;
 import tman.simulator.snapshot.Snapshot;
-import tman.system.peer.tman.gradient.Gradient;
 
 
 public final class TMan extends ComponentDefinition {
@@ -46,6 +46,7 @@ public final class TMan extends ComponentDefinition {
     private TManConfiguration   tmanConfiguration;
     private Random              r;
     private AvailableResources  availableResources;
+	private ArrayList<SuperJob> queuedJobs;
     
     private PeerDescriptor selfPeerDescriptor;
 
@@ -54,6 +55,7 @@ public final class TMan extends ComponentDefinition {
     private Gradient gradientCOMBO;
  
     private int c = Integer.parseInt(System.getProperty(Experiment.TMAN_C));
+
     
     public class TManSchedule extends Timeout {
 
@@ -86,8 +88,9 @@ public final class TMan extends ComponentDefinition {
             period = tmanConfiguration.getPeriod();
             r = new Random(tmanConfiguration.getSeed());
             availableResources = init.getAvailableResources();
-            selfPeerDescriptor = new PeerDescriptor(self, availableResources);
-            
+            queuedJobs = init.getQueueJobs();
+            selfPeerDescriptor = new PeerDescriptor(self, availableResources, queuedJobs.size());
+        
            gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByCPU(),Gradient.TYPE_CPU);
            gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByMem(),Gradient.TYPE_MEM);
            gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(),Gradient.TYPE_COMBO);
@@ -104,7 +107,9 @@ public final class TMan extends ComponentDefinition {
         public void handle(TManSchedule event) {
             Snapshot.updateTManPartners(selfPeerDescriptor, randomView);
 
-
+            constructGradientAndGossip(gradientCPU);
+            constructGradientAndGossip(gradientMEM);
+            constructGradientAndGossip(gradientCOMBO);
         }
     };
 
@@ -114,18 +119,11 @@ public final class TMan extends ComponentDefinition {
 
         @Override
         public void handle(CyclonSample event) {
-
             List<PeerDescriptor> cyclonPartners = event.getSample();
             if(cyclonPartners.size()!=0){
 	            randomView.clear();
 	            randomView.addAll(cyclonPartners);
-	
-	            constructGradientAndGossip(gradientCPU);
-	            constructGradientAndGossip(gradientMEM);
-	            constructGradientAndGossip(gradientCOMBO);
-            }
-         
-
+	         }
         }
     };
 
@@ -134,8 +132,11 @@ public final class TMan extends ComponentDefinition {
     	
     	if(gradient.isEmpty()){
     		gradient.getEntries().addAll(randomView);
+        	if(gradient.isEmpty()){
+        		return;
+        	}
     	}
-    	
+    	    	
     
     	//WHO TO GOSHIP. Randomly selected from cyclon sample.
     	PeerDescriptor who = selectPeer(gradient);
@@ -271,7 +272,7 @@ public final class TMan extends ComponentDefinition {
      */
     private PeerDescriptor selectPeer(Gradient gradient) {
     	if(gradient.getEntries().size()==0){
-    		System.err.println("Javla skit: List is empty");
+    		System.err.println("No neighbours: List is empty");
     		System.exit(1);
     	}
     	
@@ -293,17 +294,19 @@ public final class TMan extends ComponentDefinition {
      * @return
      */
     private List<PeerDescriptor> selectView(Gradient gradient, int c) {
+    	Utils.removeDuplicates(gradient.getEntries());
     	c = Math.min(gradient.getEntries().size(), c);
     	Collections.sort(gradient.getEntries(), gradient.getComparator());
     	
-//     	String name = gradient.getComparator().getClass().getName();
-//      	System.err.println("==============GRADIENT "+ name +" ========================================");
-//    	for(int i = 0; i < gradient.getEntries().size(); i ++) {
-//        	AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
-//        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ gradient.getEntries().get(i).getAddress().getId());
-//    	}
-//    	System.err.println("==============AFTER "+ name +" ========================================");
-//        
+     	String name = gradient.getComparator().getClass().getName();
+     	if(name.equals("tman.system.peer.tman.ComparatorByAvailableResources")){
+	      	System.err.println("==============GRADIENT "+ name +" ========================================");
+	    	for(int i = 0; i < gradient.getEntries().size(); i ++) {
+	        	AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
+	        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +" MEM = "+av.getFreeMemInMbs()+ " Peer ="+ gradient.getEntries().get(i).getAddress().getId()+ " Size: "+ gradient.getEntries().get(i).getQueueSize());
+	    	}
+	    	System.err.println("==============AFTER "+ name +" ========================================");
+     	}
     	List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
     	
    
@@ -315,10 +318,12 @@ public final class TMan extends ComponentDefinition {
 
     	
     	//Collections.sort(returnList, gradient.getComparator());
-//    	for(int i = 0; i < returnList.size(); i ++) {
-//        	AvailableResources av = returnList.get(i).getAvailableResources();
-//        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId());
-//    	}
+    	if(name.equals("tman.system.peer.tman.ComparatorByAvailableResources")){
+	    	for(int i = 0; i < returnList.size(); i ++) {
+	        	AvailableResources av = returnList.get(i).getAvailableResources();
+	        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId()+" Size: "+ gradient.getEntries().get(i).getQueueSize());
+	    	}
+    	}
     	
     	return returnList;
     }

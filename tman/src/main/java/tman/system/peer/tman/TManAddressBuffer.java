@@ -2,12 +2,10 @@ package tman.system.peer.tman;
 
 
 import java.io.Serializable;
-
 import java.util.List;
 
 import cyclon.system.peer.cyclon.PeerDescriptor;
 import se.sics.kompics.address.Address;
-import tman.system.peer.tman.gradient.Gradient;
 
 
 public class TManAddressBuffer implements Serializable {

@@ -2,6 +2,7 @@ package simulator.core;
 
 import common.simulation.SimulatorPort;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import se.sics.kompics.ChannelFilter;
@@ -29,13 +30,13 @@ import common.simulation.ConsistentHashtable;
 import common.simulation.GenerateReport;
 import common.simulation.PeerFail;
 import common.simulation.PeerJoin;
-
 import common.simulation.SimulatorInit;
 import common.simulation.SuperJob;
 
 import java.net.InetAddress;
 import java.util.Random;
 
+import cyclon.system.peer.cyclon.PeerDescriptor;
 import se.sics.ipasdistances.AsIpGenerator;
 import system.peer.RmPort;
 import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
@@ -166,8 +167,8 @@ public final class DataCenterSimulator extends ComponentDefinition {
         connect(timer, peer.getNegative(Timer.class));
         
         AvailableResources ar = new AvailableResources(numCpus, memInMb);
-        trigger(new PeerInit(address, bootstrapConfiguration, cyclonConfiguration, 
-                rmConfiguration, tmanConfiguration, ar), peer.getControl());
+        ArrayList<SuperJob> queueJobs = new ArrayList<SuperJob>();
+        trigger(new PeerInit(address, bootstrapConfiguration, cyclonConfiguration, rmConfiguration, tmanConfiguration, ar, queueJobs), peer.getControl());
 
         trigger(new Start(), peer.getControl());
         peers.put(id, peer);

@@ -1,7 +1,6 @@
 package tman.system.peer.tman;
 
 import se.sics.kompics.Event;
-import tman.system.peer.tman.gradient.Gradient;
 
 /**
  * A sample given from TMan to everyone interested.

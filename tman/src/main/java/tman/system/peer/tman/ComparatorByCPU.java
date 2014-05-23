@@ -11,7 +11,11 @@ public class ComparatorByCPU implements Comparator<PeerDescriptor>{
 		int aCPU = a.getAvailableResources().getNumFreeCpus();
 		int bCPU = b.getAvailableResources().getNumFreeCpus();
 
-		return bCPU - aCPU;
+		if(bCPU - aCPU!=0){
+			return bCPU - aCPU;
+		}
+		
+		return a.getQueueSize() - b.getQueueSize();
 	}
 
 

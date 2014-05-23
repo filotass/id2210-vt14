@@ -35,7 +35,7 @@ public class ComparatorByAvailableResources implements Comparator<PeerDescriptor
 		}else if(aUtility < bUtility){
 			return 1;
 		}
-		return 0;
+		return a.getQueueSize() - b.getQueueSize();
 
 	}
 }

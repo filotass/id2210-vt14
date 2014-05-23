@@ -1,5 +1,6 @@
 package system.peer;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -24,6 +25,7 @@ import common.configuration.CyclonConfiguration;
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
 import common.peer.PeerDescriptor;
+import common.simulation.SuperJob;
 import cyclon.system.peer.cyclon.*;
 import tman.system.peer.tman.TMan;
 import tman.system.peer.tman.TManInit;
@@ -44,6 +46,7 @@ public final class Peer extends ComponentDefinition {
 	private RmConfiguration rmConfiguration;
 
 	private AvailableResources availableResources;
+	private ArrayList<SuperJob> queueJobs;
 
 	public Peer() {
 		cyclon = create(Cyclon.class);
@@ -87,9 +90,11 @@ public final class Peer extends ComponentDefinition {
 			bootstrapRequestPeerCount = cyclonConfiguration.getBootstrapRequestPeerCount();
 
 			availableResources = init.getAvailableResources();
+			queueJobs = init.getQueueJobs();
+			
 
-			trigger(new CyclonInit(cyclonConfiguration, availableResources), cyclon.getControl());
-			trigger(new TManInit(self, tmanConf, availableResources),tman.getControl());
+			trigger(new CyclonInit(cyclonConfiguration, availableResources, queueJobs), cyclon.getControl());
+			trigger(new TManInit(self, tmanConf, availableResources, queueJobs),tman.getControl());
 			trigger(new BootstrapClientInit(self, init.getBootstrapConfiguration()), bootstrap.getControl());
 			BootstrapRequest request = new BootstrapRequest("Cyclon", bootstrapRequestPeerCount);
 			trigger(request, bootstrap.getPositive(P2pBootstrap.class));
@@ -124,7 +129,7 @@ public final class Peer extends ComponentDefinition {
 					availableResources.getNumFreeCpus(),
 					availableResources.getFreeMemInMbs())), 
 					bootstrap.getPositive(P2pBootstrap.class));
-			trigger(new RmInit(self, rmConfiguration, availableResources), rm.getControl());
+			trigger(new RmInit(self, rmConfiguration, availableResources,queueJobs), rm.getControl());
 		}
 	};
 

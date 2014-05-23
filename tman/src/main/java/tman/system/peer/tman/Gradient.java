@@ -1,13 +1,10 @@
-package tman.system.peer.tman.gradient;
+package tman.system.peer.tman;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-import tman.system.peer.tman.ComparatorByAvailableResources;
-import tman.system.peer.tman.ComparatorByCPU;
-import tman.system.peer.tman.ComparatorByMem;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 /**
