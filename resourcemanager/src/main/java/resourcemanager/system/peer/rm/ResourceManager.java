@@ -176,8 +176,9 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
         public void handle(SuperJob event) {
-            
-            //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
+            if(neighbours.size() != 0){
+            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
+            }
 
             List<Address> copyNeighbourList = new ArrayList<Address>();
             copyNeighbourList.addAll(neighbours);
@@ -189,9 +190,7 @@ public final class ResourceManager extends ComponentDefinition {
             if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()){
 	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumOfTasks(), neighbours.size()));
 	            
-	            if(numProbesPerJob.get(event.getId()) != 0){
-	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
-	            }
+
 	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++){
 	            	
 	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
@@ -269,7 +268,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
         	SuperJob job = event.getJob();
-
+        	Snapshot.report(Snapshot.ASN + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
@@ -280,8 +279,8 @@ public final class ResourceManager extends ComponentDefinition {
     private boolean scheduleJob(SuperJob job){
     	boolean success = availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
     	if(success){
-    		runningJobs.add(job);
     		Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+    		runningJobs.add(job);
     		ScheduleTimeout st = new ScheduleTimeout(job.getTimeToHoldResource());
     		st.setTimeoutEvent(new JobFinishedTimeout(st,job.getId()));
     		trigger(st, timerPort);
@@ -299,7 +298,6 @@ public final class ResourceManager extends ComponentDefinition {
         	for(SuperJob job: runningJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
-        			Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         			runningJobs.remove(job);
         			if(queuedJobs.size()>0){
         				SuperJob nextJob = queuedJobs.get(0);

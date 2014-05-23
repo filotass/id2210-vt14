@@ -18,7 +18,7 @@ public class Snapshot {
     public static final String INI = "INI";
     public static final String PRB = "PRB";
     public static final String SCH = "SCH";
-    public static final String TER = "TER";
+    public static final String ASN = "ASN";
     
     public static void init(int numOfStripes) {
         FileIO.write("", FOLDER+System.getProperty(Experiment.OUTFILE));

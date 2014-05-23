@@ -26,7 +26,7 @@ instance Show Setting where
                   "NUMBER_OF_JOBS:"  ++(show (jobs setting))
 
 -- list the commands
-data Command    = PRB  | INI | TER | SCH deriving (Show,Read,Ord,Eq)
+data Command    = PRB  | INI | ASN | SCH deriving (Show,Read,Ord,Eq)
 data End        = High | Low deriving (Show,Read)
 type TimeStamp  = Integer
 type JobId      = Integer
@@ -35,11 +35,19 @@ type Measure    = (Command, TimeStamp)
 type OutputLine = (JobId,   Measure)
 
 -- the specification of what should be tested
+test1 :: [(String,((Command,End),(Command,End)))]
+test1 = [(,) "Probing"        $ (,) (PRB,Low)  (INI,Low),
+         (,) "NetworkLatency" $ (,) (ASN,High) (PRB,Low),
+         (,) "WaitingQueue"   $ (,) (SCH,High) (ASN,Low),
+         (,) "Total"          $ (,) (SCH,High) (INI,Low)]
+
+test2 :: [(String,((Command,End),(Command,End)))]
+test2 = [(,) "NetworkLatency" $ (,) (ASN,High) (INI,Low),
+         (,) "WaitingQueue"   $ (,) (SCH,High) (ASN,Low),
+         (,) "Total"          $ (,) (SCH,High) (INI,Low)]
+
 tests :: [(String,((Command,End),(Command,End)))]
-tests = [(,) "Probing" $ (,) (PRB,Low)  (INI,Low),
-         (,) "Waiting" $ (,) (SCH,Low)  (PRB,Low),
-         (,) "Running" $ (,) (TER,High) (SCH,Low),
-         (,) "Total"   $ (,) (TER,High) (INI,Low)]
+tests = test2
 
 {- If no arguments are given, Print all combinations 
    for the setting variables probes, nodes, jobs and their ID. -}
