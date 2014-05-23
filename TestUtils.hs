@@ -33,15 +33,16 @@ type JobId      = Integer
 type Output     = M.Map Integer [Measure] -- used for saving id [(cmd,time)]
 type Measure    = (Command, TimeStamp)
 type OutputLine = (JobId,   Measure)
+type TestSpec   = [(String,((Command,End),(Command,End)))]
 
 -- the specification of what should be tested
-test1 :: [(String,((Command,End),(Command,End)))]
+test1 :: TestSpec
 test1 = [(,) "Probing"        $ (,) (PRB,Low)  (INI,Low),
          (,) "NetworkLatency" $ (,) (ASN,High) (PRB,Low),
          (,) "WaitingQueue"   $ (,) (SCH,High) (ASN,Low),
          (,) "Total"          $ (,) (SCH,High) (INI,Low)]
 
-test2 :: [(String,((Command,End),(Command,End)))]
+test2 :: TestSpec
 test2 = [(,) "NetworkLatency" $ (,) (ASN,High) (INI,Low),
          (,) "WaitingQueue"   $ (,) (SCH,High) (ASN,Low),
          (,) "Total"          $ (,) (SCH,High) (INI,Low)]
@@ -60,8 +61,11 @@ main = do
       -- save the result to appendfile.txt
       _  -> do outputFiles <- getDirectoryContents (head args)
                let skipFiles = [".","..",".DS_Store"]
+                   spec      = case (drop 1 (head args)) of
+                                  "test1" -> test1
+                                  "test2" -> test2
                forM_ [(head args)++o|o<-outputFiles,not $ elem o skipFiles]
-                     ((flip performOutputParsing) "resourcemanager/statistics/")
+                     ((flip (performOutputParsing spec)) "resourcemanager/statistics/")
                
 {- Generate combinations needed to test and write all files to disk -}
 createSettingFiles :: IO ()
@@ -88,12 +92,12 @@ writeFileLine fp content mode = do
 
 {- Read an output file, parse it, 
    perform calculations and generate new output files -}
-performOutputParsing :: FilePath -> FilePath -> IO ()
-performOutputParsing readFrom writeTo = do
+performOutputParsing :: TestSpec -> FilePath -> FilePath -> IO ()
+performOutputParsing spec readFrom writeTo = do
    file <- readFile readFrom
    let allLines = map parseLine (lines file)
        theMap   = foldl (+->) M.empty allLines
-       ls       = sort $ M.toList theMap
+       ls       = map ((,) spec) $ sort $ M.toList theMap
    -- perform calculations, get a big string back and write this
    -- string to the given statistics file
    forM_ [(foldl calculations "" ls,writeTo++(takeFileName readFrom)),
@@ -105,11 +109,12 @@ getTs :: Measure -> TimeStamp
 getTs (cmd,timestamp) = timestamp
 
 {- Get averages and 99th percentile as a String -}
-averages :: [(JobId,[Measure])] -> String
+averages :: [(TestSpec,(JobId,[Measure]))] -> String
 averages ls =
-   concat [label++" averages time "     ++(show $ getAvg $ getTimesFor f t ls)++
-           "\n" ++label++" 99th p time "++(show $ get99P $ getTimesFor f t ls)++"\n"
-          | (label,(f,t)) <- tests]
+   concat [label++" averages time "     ++(show $ getAvg $ getTimesFor f t oldLs)++
+           "\n" ++label++" 99th p time "++(show $ get99P $ getTimesFor f t oldLs)++"\n"
+          | (label,(f,t)) <- (fst (head ls))]
+   where oldLs = map snd ls
 
 {- For a list of times, calculate average -}
 getAvg :: [TimeStamp] -> TimeStamp
@@ -133,10 +138,10 @@ getTimesFor (c1,e1) (c2,e2) ls =
 
 {- Here we can perform the calculations needed, and then format it all as
    a string -}
-calculations :: String -> (JobId,[Measure]) -> String
-calculations old (jobId,commLs) = old ++ show jobId ++ "," ++ combs ++ "\n"
+calculations :: String -> (TestSpec,(JobId,[Measure])) -> String
+calculations old (spec,(jobId,commLs)) = old ++ show jobId ++ "," ++ combs ++ "\n"
    where combs = concat [(safeCalcMeasure x y commLs) ++ "," | (x,y)<-cs]
-         cs = map snd tests
+         cs = map snd spec
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: (Command,End) -> (Command,End) -> [Measure] -> String
