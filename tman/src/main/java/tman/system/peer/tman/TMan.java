@@ -47,12 +47,11 @@ public final class TMan extends ComponentDefinition {
     private Random              r;
     private AvailableResources  availableResources;
     
-    private PeerDescriptor selfPeerDescriptor = new PeerDescriptor(self, availableResources);
+    private PeerDescriptor selfPeerDescriptor;
 
-    private Gradient gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByCPU(selfPeerDescriptor),Gradient.TYPE_CPU);
-    private Gradient gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByMem(selfPeerDescriptor),Gradient.TYPE_MEM);
-    private Gradient gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(selfPeerDescriptor),Gradient.TYPE_COMBO);
-    
+    private Gradient gradientCPU;
+    private Gradient gradientMEM;
+    private Gradient gradientCOMBO;
  
     private int c = Integer.parseInt(System.getProperty(Experiment.TMAN_C));
     
@@ -87,6 +86,12 @@ public final class TMan extends ComponentDefinition {
             period = tmanConfiguration.getPeriod();
             r = new Random(tmanConfiguration.getSeed());
             availableResources = init.getAvailableResources();
+            selfPeerDescriptor = new PeerDescriptor(self, availableResources);
+            
+           gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByCPU(selfPeerDescriptor),Gradient.TYPE_CPU);
+           gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByMem(selfPeerDescriptor),Gradient.TYPE_MEM);
+           gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(selfPeerDescriptor),Gradient.TYPE_COMBO);
+            
             
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
@@ -99,8 +104,7 @@ public final class TMan extends ComponentDefinition {
         public void handle(TManSchedule event) {
             Snapshot.updateTManPartners(selfPeerDescriptor, randomView);
 
-            // Publish sample to connected components
-            trigger(new TManSample(randomView), tmanPort);
+
         }
     };
 
@@ -110,14 +114,16 @@ public final class TMan extends ComponentDefinition {
 
         @Override
         public void handle(CyclonSample event) {
+
             List<PeerDescriptor> cyclonPartners = event.getSample();
-
-            randomView.clear();
-            randomView.addAll(cyclonPartners);
-
-            constructGradientAndGossip(gradientCPU);
-            constructGradientAndGossip(gradientMEM);
-            constructGradientAndGossip(gradientCOMBO);
+            if(cyclonPartners.size()!=0){
+	            randomView.clear();
+	            randomView.addAll(cyclonPartners);
+	
+	            constructGradientAndGossip(gradientCPU);
+	            constructGradientAndGossip(gradientMEM);
+	            constructGradientAndGossip(gradientCOMBO);
+            }
          
 
         }
@@ -129,6 +135,8 @@ public final class TMan extends ComponentDefinition {
     	if(gradient.isEmpty()){
     		gradient.getEntries().addAll(randomView);
     	}
+    	
+    
     	//WHO TO GOSHIP. Randomly selected from cyclon sample.
     	PeerDescriptor who = selectPeer(gradient);
   
@@ -146,7 +154,7 @@ public final class TMan extends ComponentDefinition {
         TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, gradientToSend); 
         
         //WHAT TO GOSHIP. We send a list of Descriptors of peers from calling the softmax
-        new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,who.getAddress());
+        trigger(new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,who.getAddress()),networkPort);
     }
 
     /**
@@ -173,9 +181,9 @@ public final class TMan extends ComponentDefinition {
         	Gradient relatedGradient = getCorrectGradient(gradientReceived);
 
         	gradientReceived.addEntries(relatedGradient.getEntries());
-        	
         	relatedGradient.setEntries(selectView(gradientReceived,c));
-        	
+        	trigger(new TManSample(relatedGradient), tmanPort);
+
         }
     };
     
@@ -192,6 +200,8 @@ public final class TMan extends ComponentDefinition {
         	Gradient view = getCorrectGradient(receivedGradient);
         	receivedGradient.addEntries(view.getEntries());
         	view.setEntries(selectView(receivedGradient, c));
+
+            trigger(new TManSample(view), tmanPort);
         }
     };
 
@@ -259,10 +269,18 @@ public final class TMan extends ComponentDefinition {
      * @return
      */
     private PeerDescriptor selectPeer(Gradient gradient) {
+    	if(gradient.getEntries().size()==0){
+    		System.err.println("Javla skit: List is empty");
+    		System.exit(1);
+    	}
     	
-    	List<PeerDescriptor> halfList = selectView(gradient, gradient.getEntries().size()/2);
+    	int add = 0;
+    	if(gradient.getEntries().size() % 2 == 1){
+    		add = 1;
+    	}
+    	List<PeerDescriptor> halfList = selectView(gradient, gradient.getEntries().size()/2 +add);
     	
-    	return halfList.get((int) (Math.random() * halfList.size()) - 1);
+    	return halfList.get((int) (Math.random() * halfList.size()));
     }
     
     /**
@@ -273,7 +291,7 @@ public final class TMan extends ComponentDefinition {
      * @return
      */
     private List<PeerDescriptor> selectView(Gradient gradient, int c) {
-
+    	c = Math.min(gradient.getEntries().size(), c);
     	Collections.sort(gradient.getEntries(), gradient.getComparator());
     	
     	List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();

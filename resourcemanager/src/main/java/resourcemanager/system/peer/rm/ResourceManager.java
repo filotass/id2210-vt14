@@ -183,51 +183,55 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
         public void handle(SuperJob event) {
-            
+        	 Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
             //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
-            List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
-            copyNeighbourList.addAll(neighbours);
-            
-            // remember the job and then probe the peer network
-            jobsFromClients.put(event.getId(), event);
-
-            // Define what gradient to use for finding the available resources...
-            Gradient gradientToUse = null;
-            
-            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
-            if(event.getMemoryInMbs() == 0) {
-            	
-            	gradientToUse = gradientCPU;
-            
-            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
-            } else if(event.getNumCpus() == 0) {
-            	
-            	gradientToUse = gradientMEM;
-            
-            // Else, if we need both memory and cpu, lets use the combined gradient
-            // which uses multiplication of the normalized values of both CPU and MEM. 
-            } else {
-            	
-            	gradientToUse = gradientCombo;
-            }
-            
+        	 return;
+//        	 
+//            List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
+//            copyNeighbourList.addAll(neighbours);
+//            
+//            // remember the job and then probe the peer network
+//            jobsFromClients.put(event.getId(), event);
+//
+//            // Define what gradient to use for finding the available resources...
+//            Gradient gradientToUse = null;
+//            
+//            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
+//            if(event.getMemoryInMbs() == 0) {
+//            	
+//            	gradientToUse = gradientCPU;
+//            
+//            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
+//            } else if(event.getNumCpus() == 0) {
+//            	
+//            	gradientToUse = gradientMEM;
+//            
+//            // Else, if we need both memory and cpu, lets use the combined gradient
+//            // which uses multiplication of the normalized values of both CPU and MEM. 
+//            } else {
+//            	
+//            	gradientToUse = gradientCombo;
+//            }
+//          
+//            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(0).getAddress(),event);
+//            
             //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
-            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()) {
-            	
-	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumOfTasks(), neighbours.size()));
-	            
-	            if(numProbesPerJob.get(event.getId()) != 0) {
-	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
-	            }
-	            
-	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++) {	
-	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
-	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index).getAddress(), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
-	            	copyNeighbourList.remove(index);
-	            	trigger(req, networkPort);     	
-	            }
-            }
+//            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()) {
+//            	
+//	            numProbesPerJob.put(event.getId(), Math.min(NUM_PROBES*event.getNumOfTasks(), neighbours.size()));
+//	            
+//	            if(numProbesPerJob.get(event.getId()) != 0) {
+//	            	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
+//	            }
+//	            
+//	            for(int i=0; i< numProbesPerJob.get(event.getId()); i++) {	
+//	            	int index = (int) Math.round(Math.random()*(copyNeighbourList.size()-1));
+//	            	RequestResources.Request req = new RequestResources.Request(self, copyNeighbourList.get(index).getAddress(), event.getId(), event.getNumCpus(), event.getMemoryInMbs());
+//	            	copyNeighbourList.remove(index);
+//	            	trigger(req, networkPort);     	
+//	            }
+//            }
         }
     };
     
@@ -238,9 +242,9 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Request event) {
         	//System.out.println("Request incoming for job with id = "+ event.getJobID());
-        	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
-        				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
-        	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval,queuedJobs.size()),networkPort);
+//        	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
+//        				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
+//        	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval,queuedJobs.size()),networkPort);
         }
     };
     
@@ -252,35 +256,35 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
-            
-        	//System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
-            
-        	List<RequestResources.Response>  list =  probesReceived.get(event.getJobID());
-            
-        	if(list==null){
-            	list = new ArrayList<RequestResources.Response>();
-            	probesReceived.put(event.getJobID(), list);
-            }
-            list.add(event);
-                        
-            if(list.size()== numProbesPerJob.get(event.getJobID())){
-            	Snapshot.report(Snapshot.PRB + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
-            	SuperJob superJob = jobsFromClients.get(event.getJobID());
-            	
-            	// When removing events from the list, we are guaranteed to have enough elements
-            	// to not exhaust the list in the loop. Because we reject scheduling requests from apps
-            	// when they request more than the available neighbors.
-            	for(int i=0; i<superJob.getNumOfTasks(); i++){
-            	   	RequestResources.Response minLoadResponse = Collections.min(list);
-            	   	list.remove(minLoadResponse);
-                	Address selectedPeer = minLoadResponse.getSource();
-                	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
-                	trigger(schJob,networkPort);
-            	}
-            	jobsFromClients.remove(event.getJobID());
-         
-            }
-            
+//            
+//        	//System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
+//            
+//        	List<RequestResources.Response>  list =  probesReceived.get(event.getJobID());
+//            
+//        	if(list==null){
+//            	list = new ArrayList<RequestResources.Response>();
+//            	probesReceived.put(event.getJobID(), list);
+//            }
+//            list.add(event);
+//                        
+//            if(list.size()== numProbesPerJob.get(event.getJobID())){
+//            	Snapshot.report(Snapshot.PRB + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
+//            	SuperJob superJob = jobsFromClients.get(event.getJobID());
+//            	
+//            	// When removing events from the list, we are guaranteed to have enough elements
+//            	// to not exhaust the list in the loop. Because we reject scheduling requests from apps
+//            	// when they request more than the available neighbors.
+//            	for(int i=0; i<superJob.getNumOfTasks(); i++){
+//            	   	RequestResources.Response minLoadResponse = Collections.min(list);
+//            	   	list.remove(minLoadResponse);
+//                	Address selectedPeer = minLoadResponse.getSource();
+//                	RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, selectedPeer, jobsFromClients.get(event.getJobID()));
+//                	trigger(schJob,networkPort);
+//            	}
+//            	jobsFromClients.remove(event.getJobID());
+//         
+//            }
+//            
         }
     };
     
@@ -351,15 +355,15 @@ public final class ResourceManager extends ComponentDefinition {
         	
         	// Determine the type of this received gradient... 
         	if(newGradient.getType() == Gradient.TYPE_CPU) {
-        		
+        		System.err.println("Gradient CPU received");
         		gradientCPU = newGradient;
         		
         	} else if(newGradient.getType() == Gradient.TYPE_MEM) {
-        		
+        		System.err.println("Gradient Mem received");
         		gradientMEM = newGradient;
         		
         	} else if(newGradient.getType() == Gradient.TYPE_COMBO) {
-        		
+        		System.err.println("Gradient Combo received");
         		gradientCombo = newGradient;
         		
         	}else {

@@ -52,7 +52,7 @@ public class ExperimentSimulationScenario  extends SimulationScenario{
 		
 		
 		process0.start();
-		process1.startAfterTerminationOf(2000, process0);
+		process1.startAfterTerminationOf(20000, process0);
 		terminateProcess.startAfterTerminationOf(100*1000, process1);
 	}
 	
