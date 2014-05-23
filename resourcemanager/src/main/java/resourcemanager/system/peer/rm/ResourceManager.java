@@ -9,7 +9,6 @@ import cyclon.system.peer.cyclon.CyclonSamplePort;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -183,10 +182,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
         public void handle(SuperJob event) {
-        	 Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
-            //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
-
-
+        	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
         	 
             List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
             copyNeighbourList.addAll(neighbours);
@@ -300,7 +296,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.ScheduleJob event) {
         	SuperJob job = event.getJob();
-
+        	Snapshot.report(Snapshot.ASN + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
@@ -311,8 +307,8 @@ public final class ResourceManager extends ComponentDefinition {
     private boolean scheduleJob(SuperJob job){
     	boolean success = availableResources.allocate(job.getNumCpus(), job.getMemoryInMbs());
     	if(success){
-    		runningJobs.add(job);
     		Snapshot.report(Snapshot.SCH + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+    		runningJobs.add(job);
     		ScheduleTimeout st = new ScheduleTimeout(job.getTimeToHoldResource());
     		st.setTimeoutEvent(new JobFinishedTimeout(st,job.getId()));
     		trigger(st, timerPort);
@@ -330,7 +326,6 @@ public final class ResourceManager extends ComponentDefinition {
         	for(SuperJob job: runningJobs){
         		if(job.getId()== event.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
-        			Snapshot.report(Snapshot.TER + Snapshot.S + event.getJobID() + Snapshot.S + System.currentTimeMillis());
         			runningJobs.remove(job);
         			if(queuedJobs.size()>0){
         				SuperJob nextJob = queuedJobs.get(0);
