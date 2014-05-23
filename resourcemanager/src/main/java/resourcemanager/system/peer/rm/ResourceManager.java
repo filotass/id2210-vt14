@@ -9,6 +9,7 @@ import cyclon.system.peer.cyclon.CyclonSamplePort;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -208,6 +209,8 @@ public final class ResourceManager extends ComponentDefinition {
             } else {
             	
             	gradientToUse = gradientCombo;
+            	List<PeerDescriptor> peers = gradientToUse.getEntries();
+
             }
           
             RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(0).getAddress(),event);

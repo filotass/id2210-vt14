@@ -88,9 +88,9 @@ public final class TMan extends ComponentDefinition {
             availableResources = init.getAvailableResources();
             selfPeerDescriptor = new PeerDescriptor(self, availableResources);
             
-           gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByCPU(selfPeerDescriptor),Gradient.TYPE_CPU);
-           gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByMem(selfPeerDescriptor),Gradient.TYPE_MEM);
-           gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(selfPeerDescriptor),Gradient.TYPE_COMBO);
+           gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByCPU(),Gradient.TYPE_CPU);
+           gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByMem(),Gradient.TYPE_MEM);
+           gradientCOMBO = new Gradient(new ArrayList<PeerDescriptor>(), new ComparatorByAvailableResources(),Gradient.TYPE_COMBO);
             
             
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
@@ -173,6 +173,7 @@ public final class TMan extends ComponentDefinition {
         	Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(),gradientReceived.getComparator(), gradientReceived.getType());
         	gradientToRespond.addEntry(selfPeerDescriptor);
         	gradientToRespond.addEntries(randomView);
+        	Utils.removeDuplicates(gradientToRespond.getEntries());
         	
         	TManAddressBuffer tManAddressBuffer = new TManAddressBuffer(self, gradientToRespond);
         	
@@ -295,11 +296,29 @@ public final class TMan extends ComponentDefinition {
     	c = Math.min(gradient.getEntries().size(), c);
     	Collections.sort(gradient.getEntries(), gradient.getComparator());
     	
+//     	String name = gradient.getComparator().getClass().getName();
+//      	System.err.println("==============GRADIENT "+ name +" ========================================");
+//    	for(int i = 0; i < gradient.getEntries().size(); i ++) {
+//        	AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
+//        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ gradient.getEntries().get(i).getAddress().getId());
+//    	}
+//    	System.err.println("==============AFTER "+ name +" ========================================");
+//        
     	List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
     	
+   
+ 
     	for(int i = 0; i < c; i ++) {
     		returnList.add(gradient.getEntries().get(i));
-    	}
+      	}
+    	
+
+    	
+    	//Collections.sort(returnList, gradient.getComparator());
+//    	for(int i = 0; i < returnList.size(); i ++) {
+//        	AvailableResources av = returnList.get(i).getAvailableResources();
+//        	System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId());
+//    	}
     	
     	return returnList;
     }

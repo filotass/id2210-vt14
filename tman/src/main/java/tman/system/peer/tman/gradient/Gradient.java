@@ -5,6 +5,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
+import tman.system.peer.tman.ComparatorByAvailableResources;
+import tman.system.peer.tman.ComparatorByCPU;
+import tman.system.peer.tman.ComparatorByMem;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
 /**
@@ -64,6 +67,8 @@ public class Gradient implements Serializable {
 	public int getType() {
 		return type;
 	}
+	
+
 	
 	
 }
