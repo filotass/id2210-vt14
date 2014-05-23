@@ -58,7 +58,7 @@ main = do
       -- save the result to appendfile.txt
       _  -> do outputFiles <- getDirectoryContents (head args)
                let skipFiles = [".","..",".DS_Store"]
-                   spec      = case (drop 1 (head args)) of
+                   spec      = case (head (drop 1 args)) of
                                   "test1" -> test1
                                   "test2" -> test2
                forM_ [(head args)++o|o<-outputFiles,not $ elem o skipFiles]
