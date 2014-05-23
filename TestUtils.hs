@@ -35,11 +35,17 @@ type Measure    = (Command, TimeStamp)
 type OutputLine = (JobId,   Measure)
 
 -- the specification of what should be tested
-tests :: [(String,((Command,End),(Command,End)))]
+{-tests :: [(String,((Command,End),(Command,End)))]
 tests = [(,) "Probing" $ (,) (PRB,Low)  (INI,Low),
          (,) "Waiting" $ (,) (SCH,Low)  (PRB,Low),
          (,) "Running" $ (,) (TER,High) (SCH,Low),
          (,) "Total"   $ (,) (TER,High) (INI,Low)]
+-}
+
+tests :: [(String,((Command,End),(Command,End)))]
+tests = [(,) "Waiting" $ (,) (SCH,Low) (INI,Low),
+         (,) "Running" $ (,) (TER,Low) (SCH,Low),
+         (,) "Total"   $ (,) (TER,Low) (INI,Low)]
 
 {- If no arguments are given, Print all combinations 
    for the setting variables probes, nodes, jobs and their ID. -}
