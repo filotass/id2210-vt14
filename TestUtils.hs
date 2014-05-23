@@ -132,15 +132,12 @@ getTimesFor (c1,e1) (c2,e2) ls = [snd m1 - snd m2 | (m1,m2) <- a]
 calculations :: String -> (TestSpec,(JobId,[Measure])) -> String
 calculations old (spec,(jobId,commLs)) = old ++ show jobId ++ "," ++ combs ++ "\n"
    where combs = concat [(safeCalcMeasure x y commLs) ++ "," | (x,y)<-(map snd spec)]
-
-{- take 2 commands and return command1 minus command2 as String -}
-safeCalcMeasure :: (Command,End) -> (Command,End) -> [Measure] -> String
-safeCalcMeasure (cmd1,e1) (cmd2,e2) commandLs =
-   case (isJust m1 && isJust m2) of
-      True  -> show $ (snd (fromJust m1)) - (snd (fromJust m2))
-      False -> "error_command_not_found"
-   where m1 = getM cmd1 e1 commandLs
-         m2 = getM cmd2 e2 commandLs
+         safeCalcMeasure (cmd1,e1) (cmd2,e2) commandLs =
+            let m1 = getM cmd1 e1 commandLs
+                m2 = getM cmd2 e2 commandLs in
+            case (isJust m1 && isJust m2) of
+               True  -> show $ (snd (fromJust m1)) - (snd (fromJust m2))
+               False -> "error_command_not_found"
 
 {- try to pick from Just, in a safe manner... If not found return nothing
    (Command, TimeStamp) -}
