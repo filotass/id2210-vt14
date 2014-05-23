@@ -47,9 +47,6 @@ test2 = [(,) "NetworkLatency" $ (,) (ASN,High) (INI,Low),
          (,) "WaitingQueue"   $ (,) (SCH,High) (ASN,Low),
          (,) "Total"          $ (,) (SCH,High) (INI,Low)]
 
-tests :: [(String,((Command,End),(Command,End)))]
-tests = test2
-
 {- If no arguments are given, Print all combinations 
    for the setting variables probes, nodes, jobs and their ID. -}
 main :: IO ()
