@@ -278,6 +278,7 @@ public final class TMan extends ComponentDefinition {
     	if(gradient.getEntries().size() % 2 == 1){
     		add = 1;
     	}
+    	
     	List<PeerDescriptor> halfList = selectView(gradient, gradient.getEntries().size()/2 +add);
     	
     	return halfList.get((int) (Math.random() * halfList.size()));
