@@ -186,36 +186,37 @@ public final class ResourceManager extends ComponentDefinition {
         	 Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
             //System.out.println("Client wants to allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
 
-        	 return;
-//        	 
-//            List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
-//            copyNeighbourList.addAll(neighbours);
-//            
-//            // remember the job and then probe the peer network
-//            jobsFromClients.put(event.getId(), event);
-//
-//            // Define what gradient to use for finding the available resources...
-//            Gradient gradientToUse = null;
-//            
-//            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
-//            if(event.getMemoryInMbs() == 0) {
-//            	
-//            	gradientToUse = gradientCPU;
-//            
-//            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
-//            } else if(event.getNumCpus() == 0) {
-//            	
-//            	gradientToUse = gradientMEM;
-//            
-//            // Else, if we need both memory and cpu, lets use the combined gradient
-//            // which uses multiplication of the normalized values of both CPU and MEM. 
-//            } else {
-//            	
-//            	gradientToUse = gradientCombo;
-//            }
-//          
-//            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(0).getAddress(),event);
-//            
+
+        	 
+            List<PeerDescriptor> copyNeighbourList = new ArrayList<PeerDescriptor>();
+            copyNeighbourList.addAll(neighbours);
+            
+            // remember the job and then probe the peer network
+            jobsFromClients.put(event.getId(), event);
+
+            // Define what gradient to use for finding the available resources...
+            Gradient gradientToUse = null;
+            
+            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
+            if(event.getMemoryInMbs() == 0) {
+            	
+            	gradientToUse = gradientCPU;
+            
+            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
+            } else if(event.getNumCpus() == 0) {
+            	
+            	gradientToUse = gradientMEM;
+            
+            // Else, if we need both memory and cpu, lets use the combined gradient
+            // which uses multiplication of the normalized values of both CPU and MEM. 
+            } else {
+            	
+            	gradientToUse = gradientCombo;
+            }
+          
+            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(0).getAddress(),event);
+            trigger(schJob, networkPort);
+            
             //If it is a single job fine. If it has many subJobs then the num of subJobs should not be greater than the number of neighbouring nodes.
 //            if(event.isSingular() || event.getNumOfTasks() <= neighbours.size()) {
 //            	
@@ -355,15 +356,15 @@ public final class ResourceManager extends ComponentDefinition {
         	
         	// Determine the type of this received gradient... 
         	if(newGradient.getType() == Gradient.TYPE_CPU) {
-        		System.err.println("Gradient CPU received");
+        		//System.err.println("Gradient CPU received");
         		gradientCPU = newGradient;
         		
         	} else if(newGradient.getType() == Gradient.TYPE_MEM) {
-        		System.err.println("Gradient Mem received");
+        		//System.err.println("Gradient Mem received");
         		gradientMEM = newGradient;
         		
         	} else if(newGradient.getType() == Gradient.TYPE_COMBO) {
-        		System.err.println("Gradient Combo received");
+        		//System.err.println("Gradient Combo received");
         		gradientCombo = newGradient;
         		
         	}else {
