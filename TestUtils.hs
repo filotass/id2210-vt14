@@ -101,10 +101,6 @@ performOutputParsing spec readFrom writeTo = do
           (averages ls, writeTo++"__averages__"++(takeFileName readFrom))]
          (\(theList,theMsg) -> writeFileLine theMsg theList WriteMode)
 
-{- Helper function for getting timeStamp from a Measure -}
-getTs :: Measure -> TimeStamp
-getTs (cmd,timestamp) = timestamp
-
 {- Get averages and 99th percentile as a String -}
 averages :: [(TestSpec,(JobId,[Measure]))] -> String
 averages ls =
@@ -128,31 +124,28 @@ get99P ls = last percent99
    
    THIS FUNCTION IS UNSAFE because it assumes all Maybes are Just -}
 getTimesFor :: (Command,End) -> (Command,End) -> [(JobId,[Measure])] -> [TimeStamp]
-getTimesFor (c1,e1) (c2,e2) ls =
-   [getTs measure1 - getTs measure2 | (measure1,measure2) <- a]
-      where a = [(fromJust $ getMeasure c1 e1 meas,fromJust $ getMeasure c2 e2 meas)
-                |(_,meas)<-ls]
+getTimesFor (c1,e1) (c2,e2) ls = [snd m1 - snd m2 | (m1,m2) <- a]
+   where a = [(fromJust $ getM c1 e1 meas,fromJust $ getM c2 e2 meas)|(_,meas)<-ls]
 
 {- Here we can perform the calculations needed, and then format it all as
    a string -}
 calculations :: String -> (TestSpec,(JobId,[Measure])) -> String
 calculations old (spec,(jobId,commLs)) = old ++ show jobId ++ "," ++ combs ++ "\n"
-   where combs = concat [(safeCalcMeasure x y commLs) ++ "," | (x,y)<-cs]
-         cs = map snd spec
+   where combs = concat [(safeCalcMeasure x y commLs) ++ "," | (x,y)<-(map snd spec)]
 
 {- take 2 commands and return command1 minus command2 as String -}
 safeCalcMeasure :: (Command,End) -> (Command,End) -> [Measure] -> String
 safeCalcMeasure (cmd1,e1) (cmd2,e2) commandLs =
    case (isJust m1 && isJust m2) of
-      True  -> show $ (getTs (fromJust m1)) - (getTs (fromJust m2))
+      True  -> show $ (snd (fromJust m1)) - (snd (fromJust m2))
       False -> "error_command_not_found"
-   where m1 = getMeasure cmd1 e1 commandLs
-         m2 = getMeasure cmd2 e2 commandLs
+   where m1 = getM cmd1 e1 commandLs
+         m2 = getM cmd2 e2 commandLs
 
 {- try to pick from Just, in a safe manner... If not found return nothing
    (Command, TimeStamp) -}
-getMeasure :: Command -> End -> [Measure] -> Maybe Measure
-getMeasure cmd e ls =
+getM :: Command -> End -> [Measure] -> Maybe Measure
+getM cmd e ls =
    case (isJust $ lookup cmd $ searchList e ls) of
       True  -> Just (head $ searchList e ls)
       False -> Nothing
@@ -165,8 +158,7 @@ getMeasure cmd e ls =
    info we need and put it in an OutputLine tuple.
    Expects the format of three words on a line separated by space -}
 parseLine :: String -> OutputLine
-parseLine inp =
-   (read jobId::JobId,(read command::Command,read timest::TimeStamp))
+parseLine inp = (read jobId::JobId,(read command::Command,read timest::TimeStamp))
       where [command,jobId,timest] = words inp
          
 {- add one item to the output hashmap
