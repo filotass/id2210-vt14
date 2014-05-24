@@ -1,4 +1,4 @@
-module TestUtils where
+module TestUtils2 where
 
 -- runhaskell TestUtils.hs resourcemanager/output/
 import Control.Exception
