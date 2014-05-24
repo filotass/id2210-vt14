@@ -62,9 +62,7 @@ performOutputParsing spec from to = catch
        -- print files (calcs and averages)
        writeFileLine (snd calcs) (fst calcs) WriteMode
        writeFileLine (snd avgs)  (fst avgs)  WriteMode)
-   handler
-   where handler :: ErrorCall -> IO ()
-         handler e = (putStrLn . show) e
+   ((putStrLn . show) :: ErrorCall -> IO ()) -- handler
 
 {- Parsing a line and may throw ErrorT errors depending on the file input -}
 parseLine :: String -> ErrorT String IO OutputLine
@@ -100,10 +98,9 @@ calculations old (spec,(jobId,commLs)) = old ++ show jobId ++ "," ++ combs ++ "\
 {- Get averages and 99th percentile as a String -}
 averages :: [(TestSpec,(JobId,[Measure]))] -> String
 averages ls =
-   concat [label++" averages time "     ++(show $ getAvg $ timesFor f t oldLs)++
-           "\n" ++label++" 99th p time "++(show $ get99P $ timesFor f t oldLs)++"\n"
+   concat [label++" averages time "     ++(show $ getAvg $ timesFor f t (map snd ls))++
+           "\n" ++label++" 99th p time "++(show $ get99P $ timesFor f t (map snd ls))++"\n"
           | (label,(f,t)) <- (fst (head ls))]
-   where oldLs = map snd ls
 
 timesFor :: (Command,End) -> (Command,End) -> [(JobId,[Measure])] -> [TimeStamp]
 timesFor (c1,e1) (c2,e2) ls = [snd m1 - snd m2 | (m1,m2) <- a ]
@@ -121,8 +118,7 @@ getM cmd e ls =
 searchList :: Command -> End -> [Measure] -> [Measure]
 searchList cmd rank inp | rank == High = reverse ls
                         | otherwise    = ls
-   where ls = map swap $ sort [(tS,iD)|(iD,tS)<-inp,iD==cmd]
-
+   where ls = map swap $ sort [swap x|x<-inp,fst x==cmd]
 
 {- For a list of times, calculate average -}
 getAvg :: [TimeStamp] -> TimeStamp
