@@ -35,7 +35,7 @@ public class Configuration {
     public Configuration(long seed, Experiment e) throws IOException {
         this.seed = seed;
         searchConfiguration = new RmConfiguration(seed);
-        tmanConfiguration = new TManConfiguration(seed, 400, 0.8);
+        tmanConfiguration = new TManConfiguration(seed, 50, 1);
         cyclonConfiguration = new CyclonConfiguration(seed, 5, 10, 400, 500000,(long) (Integer.MAX_VALUE - Integer.MIN_VALUE), 20);
         
         System.setProperty(Experiment.OUTFILE, e.getValue(Experiment.OUTFILE));
