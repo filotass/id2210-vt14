@@ -17,7 +17,7 @@ public class TManSample extends Event {
 		this.gradient = newGradient;
 	}
 
-	public Gradient getSample() {
+	public Gradient getGradient() {
 		return this.gradient;
 	}
 }

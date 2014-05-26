@@ -7,9 +7,7 @@ import common.simulation.SuperJob;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import java.util.ArrayList;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
@@ -54,20 +52,10 @@ public final class ResourceManager extends ComponentDefinition {
 
     
     /**
-     * Used for role of Worker. Queues Jobs that are assigned from Schedulers.
+     * Used for role of Worker.
      */
     private List<SuperJob> queuedJobs;
-    
     private List<SuperJob> runningJobs = new ArrayList<SuperJob>();
-
-    /**
-     * Used for role of Scheduler. Holds the Jobs to be assigned to Workers.
-     */
-    private Map<Long,SuperJob> jobsFromClients = new HashMap<Long,SuperJob>();
- 
-    /**
-     * Used for role of Worker. 
-     */
     private AvailableResources availableResources;
     
     /**
@@ -107,23 +95,8 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
     	
         @Override
-        public void handle(TManSample event) {
-        	
-        	Gradient newGradient = event.getSample();
-        	
-        	// Determine the type of this received gradient... 
-        	if(newGradient.getType() == Gradient.TYPE_CPU) {
-        		gradientCPU = newGradient;
-        	} else if(newGradient.getType() == Gradient.TYPE_MEM) {
-        		gradientMEM = newGradient;
-        		
-        	} else if(newGradient.getType() == Gradient.TYPE_COMBO) {
-        		gradientCombo = newGradient;
-        		
-        	}else {
-        		System.err.println("ERROR UNKNOWN GRADIENT TYPE");
-        		System.exit(1);
-        	}
+        public void handle(TManSample sample) {
+        	updateGradient(sample.getGradient());
         }
     };
 
@@ -132,38 +105,15 @@ public final class ResourceManager extends ComponentDefinition {
      */
     Handler<SuperJob> handleRequestResource = new Handler<SuperJob>() {
         @Override
-        public void handle(SuperJob event) {
-        	Snapshot.report(Snapshot.INI + Snapshot.S + event.getId() + Snapshot.S + System.currentTimeMillis());
-        	 
+        public void handle(SuperJob job) {
+        	Snapshot.report(Snapshot.INI + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
+            
+            Gradient gradientToUse = getRelevantGradient(job);
 
-            
-            // remember the job and then probe the peer network
-            jobsFromClients.put(event.getId(), event);
-
-            // Define what gradient to use for finding the available resources...
-            Gradient gradientToUse = null;
-            
-            // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
-            if(event.getMemoryInMbs() == 0) {
-            	
-            	gradientToUse = gradientCPU;
-            
-            // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
-            } else if(event.getNumCpus() == 0) {
-            	
-            	gradientToUse = gradientMEM;
-            
-            // Else, if we need both memory and cpu, lets use the combined gradient
-            // which uses multiplication of the normalized values of both CPU and MEM. 
-            } else {
-            	gradientToUse = gradientCombo;
-            }
             int rndIndex = (int) Math.random() * gradientToUse.getEntries().size();
           
-            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(rndIndex).getAddress(),event);
+            RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(rndIndex).getAddress(),job);
             trigger(schJob, networkPort);
-            
-
         }
     };
     
@@ -176,8 +126,8 @@ public final class ResourceManager extends ComponentDefinition {
      */
     Handler<RequestResources.ScheduleJob> handleIncomingJob = new Handler<RequestResources.ScheduleJob>() {
         @Override
-        public void handle(RequestResources.ScheduleJob event) {
-        	SuperJob job = event.getJob();
+        public void handle(RequestResources.ScheduleJob schJob) {
+        	SuperJob job = schJob.getJob();
         	Snapshot.report(Snapshot.ASN + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
         	System.out.println("HANDLE INCOMING JOB, MY RESOURCES ARE: " + availableResources+ " Queue size="+queuedJobs.size());
@@ -206,9 +156,9 @@ public final class ResourceManager extends ComponentDefinition {
      */
     Handler<JobFinishedTimeout> handleJobFinishedTimeout = new Handler<JobFinishedTimeout>() {
         @Override
-        public void handle(JobFinishedTimeout event) {
+        public void handle(JobFinishedTimeout timeout) {
         	for(SuperJob job: runningJobs){
-        		if(job.getId()== event.getJobID()){
+        		if(job.getId()== timeout.getJobID()){
         			availableResources.release(job.getNumCpus(), job.getMemoryInMbs());
         			runningJobs.remove(job);
         			if(queuedJobs.size()>0){
@@ -222,6 +172,44 @@ public final class ResourceManager extends ComponentDefinition {
         	}
         }
     };
+    
+    private Gradient getRelevantGradient(SuperJob event){
+        // Define what gradient to use for finding the available resources...
+        Gradient gradientToUse = null;
+        
+        // If MBS == 0, we only care about finding CPU... Let's use the CPU only gradient 
+        if(event.getMemoryInMbs() == 0) {
+        	gradientToUse = gradientCPU;
+        
+        // If CPU == 0, we only care about finding MEM... Let's use the MEM only gradient
+        } else if(event.getNumCpus() == 0) {
+        	gradientToUse = gradientMEM;
+        
+        // Else, if we need both memory and cpu, lets use the combined gradient
+        // which uses multiplication of the normalized values of both CPU and MEM. 
+        } else {
+        	gradientToUse = gradientCombo;
+        }
+        
+        return gradientToUse;
+    }
+    
+    private void updateGradient(Gradient gradient){
+    	// Determine the type of this received gradient... 
+    	if(gradient.getType() == Gradient.TYPE_CPU) {
+    		gradientCPU = gradient;
+    	} else if(gradient.getType() == Gradient.TYPE_MEM) {
+    		gradientMEM = gradient;
+    		
+    	} else if(gradient.getType() == Gradient.TYPE_COMBO) {
+    		gradientCombo = gradient;
+    		
+    	}else {
+    		System.err.println("ERROR UNKNOWN GRADIENT TYPE");
+    		System.exit(1);
+    	}
+    }
+    
 
 
 }
