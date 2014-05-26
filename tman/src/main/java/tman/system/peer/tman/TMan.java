@@ -325,11 +325,12 @@ public final class TMan extends ComponentDefinition {
 		Collections.sort(gradient.getEntries(), comparator);
 
 		String name = comparator.getClass().getName();
-		if(name.equals("tman.system.peer.tman.ComparatorByAvailableResources")){
-			System.err.println("==============GRADIENT "+ name +" ========================================");
+		if(name.equals("tman.system.peer.tman.ComparatorByCOMBO")){
+			System.out.println("==============GRADIENT "+ name +" ========================================");
+			System.out.println("My Values -- CPU:"+selfPeerDescriptor.getAvailableResources().getNumFreeCpus());
 			for(int i = 0; i < gradient.getEntries().size(); i ++) {
 				AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
-				System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +" MEM = "+av.getFreeMemInMbs()+ " Peer ="+ gradient.getEntries().get(i).getAddress().getId()+ " Size: "+ gradient.getEntries().get(i).getQueueSize());
+				System.out.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +" MEM = "+av.getFreeMemInMbs()+ " Peer ="+ gradient.getEntries().get(i).getAddress().getId()+ " Size: "+ gradient.getEntries().get(i).getQueueSize());
 			}
 			System.err.println("==============AFTER "+ name +" ========================================");
 		}
@@ -344,7 +345,7 @@ public final class TMan extends ComponentDefinition {
 
 
 		//Collections.sort(returnList, gradient.getComparator());
-		if(name.equals("tman.system.peer.tman.ComparatorByAvailableResources")){
+		if(name.equals("tman.system.peer.tman.ComparatorByCOMBO")){
 			for(int i = 0; i < returnList.size(); i ++) {
 				AvailableResources av = returnList.get(i).getAvailableResources();
 				System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId()+" Size: "+ gradient.getEntries().get(i).getQueueSize());

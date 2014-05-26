@@ -4,27 +4,31 @@
  */
 package tman.system.peer.tman.comparators;
 
-import java.util.Comparator;
-import se.sics.kompics.address.Address;
+
+import cyclon.system.peer.cyclon.PeerDescriptor;
+
 
 /**
  * Make Node with Highest Id Leader in the Gradient
  */
-public class ComparatorById implements Comparator<Address> {
-    Address self;
+public class ComparatorById extends PeerComparator {
 
-    public ComparatorById(Address self) {
-        this.self = self;
+    public ComparatorById(PeerDescriptor self) {
+        super(self);
     }
 
     @Override
-    public int compare(Address o1, Address o2) {
-        assert (o1.getId() == o2.getId());
-        if (o1.getId() < self.getId() && o2.getId() > self.getId()) {
+    public int compare(PeerDescriptor a, PeerDescriptor b) {
+
+    	int aID = a.getAddress().getId();
+    	int bID = b.getAddress().getId();
+    	int sID = self.getAddress().getId();
+    	
+        if (aID< sID && bID > sID) {
             return 1;
-        } else if (o2.getId() < self.getId() && o1.getId() > self.getId()) {
+        } else if (bID < sID && aID > sID) {
             return -1;
-        } else if (Math.abs(o1.getId() - self.getId()) < Math.abs(o2.getId() - self.getId())) {
+        } else if (Math.abs(aID - sID) < Math.abs(bID - sID)) {
             return -1;
         }
         return 1;
