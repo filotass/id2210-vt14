@@ -368,6 +368,7 @@ public final class TMan extends ComponentDefinition {
 			returnList.add(gradient.getEntries().get(i));
 		}
 
+
 //		//Collections.sort(returnList, gradient.getComparator());
 //		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
 //			for(int i = 0; i < returnList.size(); i ++) {
