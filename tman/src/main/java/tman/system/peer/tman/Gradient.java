@@ -2,7 +2,6 @@ package tman.system.peer.tman;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 
 import cyclon.system.peer.cyclon.PeerDescriptor;
@@ -47,11 +46,11 @@ public class Gradient implements Serializable {
 		return (entries.size()==0);
 	}
 	
-	public void addEntry(PeerDescriptor p){
+	public void add(PeerDescriptor p){
 		entries.add(p);
 	}
 	
-	public void addEntries(Collection<PeerDescriptor> p){
+	public void addAll(Collection<PeerDescriptor> p){
 		entries.addAll(p);
 	}
 

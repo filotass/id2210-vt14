@@ -11,10 +11,16 @@ public class ComparatorByMEM extends PeerComparator{
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
 		int aMem = a.getAvailableResources().getFreeMemInMbs();
 		int bMem = b.getAvailableResources().getFreeMemInMbs();
+		int selfMem = self.getAvailableResources().getFreeMemInMbs();
 		
-		if(bMem - aMem != 0){
-			return bMem - aMem;
-		}
+		
+        if (aMem < selfMem && bMem > selfMem) {
+            return 1;
+        } else if (bMem < selfMem && aMem > selfMem) {
+            return -1;
+        } else if (Math.abs(aMem - selfMem) < Math.abs(bMem - selfMem)) {
+            return -1;
+        }
 
 		return a.getQueueSize() - b.getQueueSize();
 	}

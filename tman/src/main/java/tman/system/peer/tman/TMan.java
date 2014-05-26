@@ -12,13 +12,9 @@ import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -183,8 +179,8 @@ public final class TMan extends ComponentDefinition {
 			Gradient gradientReceived = event.getRandomBuffer().getGradient();
 
 			Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(), gradientReceived.getType());
-			gradientToRespond.addEntry(selfPeerDescriptor);
-			gradientToRespond.addEntries(randomView);
+			gradientToRespond.add(selfPeerDescriptor);
+			gradientToRespond.addAll(randomView);
 			Utils.removeDuplicates(gradientToRespond.getEntries());
 
 			TManAddressBuffer tManAddressBuffer = new TManAddressBuffer(self, gradientToRespond);
@@ -193,7 +189,7 @@ public final class TMan extends ComponentDefinition {
 
 			Gradient relatedGradient = getCorrectGradient(gradientReceived);
 
-			gradientReceived.addEntries(relatedGradient.getEntries());
+			gradientReceived.addAll(relatedGradient.getEntries());
 			relatedGradient.setEntries(selectView(gradientReceived,getComparator(gradientReceived.getType()),c));
 			trigger(new TManSample(relatedGradient), tmanPort);
 
@@ -211,7 +207,7 @@ public final class TMan extends ComponentDefinition {
 		public void handle(ExchangeMsg.Response event) {
 			Gradient receivedGradient = event.getSelectedBuffer().getGradient();
 			Gradient view = getCorrectGradient(receivedGradient);
-			receivedGradient.addEntries(view.getEntries());
+			receivedGradient.addAll(view.getEntries());
 			view.setEntries(selectView(receivedGradient,getComparator(receivedGradient.getType()), c));
 
 			trigger(new TManSample(view), tmanPort);

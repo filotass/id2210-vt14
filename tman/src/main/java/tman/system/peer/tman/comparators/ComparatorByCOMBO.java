@@ -15,9 +15,11 @@ public class ComparatorByCOMBO extends PeerComparator{
 		
 		double aCPU = a.getAvailableResources().getNumFreeCpus();
 		double bCPU = b.getAvailableResources().getNumFreeCpus();
+		double sCPU = self.getAvailableResources().getNumFreeCpus();
 
 		double aMem = a.getAvailableResources().getFreeMemInMbs();
 		double bMem = b.getAvailableResources().getFreeMemInMbs();
+		double sMem = self.getAvailableResources().getFreeMemInMbs();
 
 		
 		double totalCPUs = Integer.parseInt(System.getProperty(Experiment.NUMBER_OF_CPUS_PER_NODE));
@@ -27,17 +29,24 @@ public class ComparatorByCOMBO extends PeerComparator{
 		double aNRM_MEM = aMem/totalMem;
 		double bNRM_CPU = bCPU/totalCPUs;
 		double bNRM_MEM = bMem/totalMem;
+		double sNRM_CPU = sCPU/totalCPUs;
+		double sNRM_MEM = sMem/totalMem;
 
 		
 		double aUtility = aNRM_CPU*aNRM_MEM;
 		double bUtility = bNRM_CPU*bNRM_MEM;
+		double sUtility = sNRM_CPU*sNRM_MEM;
+		
 
-		if(aUtility > bUtility){
-			return -1;
-		}else if(aUtility < bUtility){
-			return 1;
-		}
-		return a.getQueueSize() - b.getQueueSize();
+	      if (aUtility < sUtility && bUtility > sUtility) {
+	            return 1;
+	        } else if (bUtility < sUtility && aUtility > sUtility) {
+	            return -1;
+	        } else if (Math.abs(aUtility - sUtility) < Math.abs(bUtility - sUtility)) {
+	            return -1;
+	        }
+
+			return a.getQueueSize() - b.getQueueSize();
 
 	}
 }
