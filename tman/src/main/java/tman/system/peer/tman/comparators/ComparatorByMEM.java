@@ -1,11 +1,12 @@
-package tman.system.peer.tman;
-
-import java.util.Comparator;
-
+package tman.system.peer.tman.comparators;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
-public class ComparatorByMem implements Comparator<PeerDescriptor>{
-
+public class ComparatorByMEM extends PeerComparator{
+	
+    public ComparatorByMEM(PeerDescriptor self) {
+    	super(self);
+    }
+    
 	@Override
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
 		int aMem = a.getAvailableResources().getFreeMemInMbs();

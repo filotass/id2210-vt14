@@ -1,13 +1,15 @@
-package tman.system.peer.tman;
-
-import java.util.Comparator;
+package tman.system.peer.tman.comparators;
 
 import common.simulation.scenarios.Experiment;
-
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
-public class ComparatorByAvailableResources implements Comparator<PeerDescriptor>{
+public class ComparatorByCOMBO extends PeerComparator{
 
+	
+    public ComparatorByCOMBO(PeerDescriptor self) {
+    	super(self);
+    }
+	
 	@Override
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
 		

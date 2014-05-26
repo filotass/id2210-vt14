@@ -20,17 +20,15 @@ public class Gradient implements Serializable {
 	
 	private static final long serialVersionUID = -5489515024758468494L;
 	private List<PeerDescriptor> entries;
-	private Comparator<? super PeerDescriptor> comparator;
 	private int type;
 	
 	public static final int TYPE_CPU=0;
 	public static final int TYPE_MEM=1;
 	public static final int TYPE_COMBO=2;
 	
-	public Gradient(List<PeerDescriptor> entries, Comparator<? super PeerDescriptor> comparator, int type) {
+	public Gradient(List<PeerDescriptor> entries, int type) {
 		this.type = type;
 		this.entries = entries;
-		this.comparator = comparator;
 	}
 	
 	public List<PeerDescriptor> getEntries() {
@@ -56,11 +54,7 @@ public class Gradient implements Serializable {
 	public void addEntries(Collection<PeerDescriptor> p){
 		entries.addAll(p);
 	}
-	
-	public Comparator<? super PeerDescriptor> getComparator() {
-		return comparator;
-	}
-	
+
 	public int getType() {
 		return type;
 	}

@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package tman.system.peer.tman;
+package tman.system.peer.tman.comparators;
 
 import java.util.Comparator;
 import se.sics.kompics.address.Address;

@@ -1,11 +1,14 @@
-package tman.system.peer.tman;
-
-import java.util.Comparator;
+package tman.system.peer.tman.comparators;
 
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
-public class ComparatorByCPU implements Comparator<PeerDescriptor>{
+public class ComparatorByCPU extends PeerComparator{
 
+	
+    public ComparatorByCPU(PeerDescriptor self) {
+        super(self);
+    }
+	
 	@Override
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
 		int aCPU = a.getAvailableResources().getNumFreeCpus();
