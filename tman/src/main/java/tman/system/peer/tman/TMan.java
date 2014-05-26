@@ -32,34 +32,31 @@ import tman.system.peer.tman.comparators.ComparatorByCPU;
 import tman.system.peer.tman.comparators.ComparatorByMEM;
 import tman.system.peer.tman.comparators.PeerComparator;
 
-
 public final class TMan extends ComponentDefinition {
 
-	Negative<TManSamplePort>    tmanPort         = negative(TManSamplePort.class);
-	Positive<CyclonSamplePort>  cyclonSamplePort = positive(CyclonSamplePort.class);
-	Positive<Network>           networkPort      = positive(Network.class);
-	Positive<Timer>             timerPort        = positive(Timer.class);
-	private long                period;
-	private Address             self;
+	Negative<TManSamplePort>           tmanPort         = negative(TManSamplePort.class);
+	Positive<CyclonSamplePort>         cyclonSamplePort = positive(CyclonSamplePort.class);
+	Positive<Network>                  networkPort      = positive(Network.class);
+	Positive<Timer>                    timerPort        = positive(Timer.class);
+	private long                       period;
+	private Address                    self;
 	private ArrayList<PeerDescriptor>  randomView;
-	private TManConfiguration   tmanConfiguration;
-	private Random              r;
-	private AvailableResources  availableResources;
-	private ArrayList<SuperJob> queuedJobs;
+	private TManConfiguration          tmanConfiguration;
+	private Random                     r;
+	private AvailableResources         availableResources;
+	private ArrayList<SuperJob>        queuedJobs;
 
-	private PeerDescriptor selfPeerDescriptor;
+	private PeerDescriptor             selfPeerDescriptor;
 
-	private Gradient gradientCPU;
-	private Gradient gradientMEM;
-	private Gradient gradientCOMBO;
+	private Gradient                   gradientCPU;
+	private Gradient                   gradientMEM;
+	private Gradient                   gradientCOMBO;
 
-	private PeerComparator comparatorCPU;
-	private PeerComparator comparatorMEM;
-	private PeerComparator comparatorCOMBO;
-
+	private PeerComparator             comparatorCPU;
+	private PeerComparator             comparatorMEM;
+	private PeerComparator             comparatorCOMBO;
 
 	private int c = Integer.parseInt(System.getProperty(Experiment.TMAN_C));
-
 
 	public class TManSchedule extends Timeout {
 
@@ -79,9 +76,7 @@ public final class TMan extends ComponentDefinition {
 		subscribe(handleCyclonSample, cyclonSamplePort);
 		subscribe(handleTManPartnersResponse, networkPort);
 		subscribe(handleTManPartnersRequest, networkPort);
-
 	}
-
 
 	Handler<TManInit> handleInit = new Handler<TManInit>() {
 		@Override
@@ -135,7 +130,6 @@ public final class TMan extends ComponentDefinition {
 		}
 	};
 
-
 	private void constructGradientAndGossip(Gradient gradient){
 
 		if(gradient.isEmpty()){
@@ -145,30 +139,56 @@ public final class TMan extends ComponentDefinition {
 			}
 		}
 
-
 		//WHO TO GOSHIP. Randomly selected from cyclon sample.
 		PeerDescriptor who = selectPeer(gradient);
 
-
 		ArrayList<PeerDescriptor> bufToSend = new ArrayList<PeerDescriptor>();
 		bufToSend.add(selfPeerDescriptor);
-		bufToSend.addAll(gradient.getEntries());
-		bufToSend.addAll(randomView);
-		Utils.removeDuplicates(bufToSend);
+		
+		addAndNub(bufToSend, gradient.getEntries());
+		addAndNub(bufToSend, randomView);
 
 		Gradient gradientToSend = new Gradient(bufToSend,gradient.getType());
-
 
 		TManAddressBuffer tmanBuffer = new TManAddressBuffer(self, gradientToSend); 
 
 		//WHAT TO GOSHIP. We send a list of Descriptors of peers from calling the softmax
 		trigger(new ExchangeMsg.Request(UUID.randomUUID(), tmanBuffer, self,who.getAddress()),networkPort);
 	}
+	
+	/**
+	 * Given a reference to an arraylist (l1), and another arrayList (l2) which to pick from, 
+	 * try to remove each element from l1 (if it exists) and then add that element form l2.
+	 * 
+	 * perform a nub (remove duplicates)
+	 */
+	private void addAndNub(List<PeerDescriptor> l1, List<PeerDescriptor> l2) {
+		
+		for(PeerDescriptor peer : l2) {
+			
+			// if it currently exists in many places, or not at all
+			while(l1.contains(peer)) {
+				
+				l1.remove(peer); // removes peer from l1 if it exists in l1
+			}
+			
+			// In any case... Add peer to l1
+			l1.add(peer);
+		}
+	}
+	
+	private void addAndNub(Gradient g, List<PeerDescriptor> l2) {
+		
+		// Be sure to remove existing PeerDescriptors before adding new
+	    List<PeerDescriptor> tempRef = g.getEntries();
+	    addAndNub(tempRef,l2); // NOT a recursive call really, 
+	                           // just a call to the overloaded function
+	                           // which is compiled to another function
+		g.setEntries(tempRef);
+	}
 
 	/**
-	 * When handling a request,  
-	 * 
-	 * TODO: What is view?
+	 * Handle gossip
 	 * 
 	 * @see https://www.kth.se/social/upload/51647982f276546170461c46/4-gossip.pdf
 	 */
@@ -180,8 +200,7 @@ public final class TMan extends ComponentDefinition {
 
 			Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(), gradientReceived.getType());
 			gradientToRespond.add(selfPeerDescriptor);
-			gradientToRespond.addAll(randomView);
-			Utils.removeDuplicates(gradientToRespond.getEntries());
+			addAndNub(gradientToRespond,randomView);
 
 			TManAddressBuffer tManAddressBuffer = new TManAddressBuffer(self, gradientToRespond);
 
@@ -189,14 +208,12 @@ public final class TMan extends ComponentDefinition {
 
 			Gradient relatedGradient = getCorrectGradient(gradientReceived);
 
-			gradientReceived.addAll(relatedGradient.getEntries());
+			addAndNub(gradientReceived,relatedGradient.getEntries());
 			relatedGradient.setEntries(selectView(gradientReceived,getComparator(gradientReceived.getType()),c));
 			trigger(new TManSample(relatedGradient), tmanPort);
 
 		}
 	};
-
-
 
 	/**
 	 * This node has requested to see availableResources of another resource and
@@ -207,7 +224,7 @@ public final class TMan extends ComponentDefinition {
 		public void handle(ExchangeMsg.Response event) {
 			Gradient receivedGradient = event.getSelectedBuffer().getGradient();
 			Gradient view = getCorrectGradient(receivedGradient);
-			receivedGradient.addAll(view.getEntries());
+			addAndNub(receivedGradient,view.getEntries());
 			view.setEntries(selectView(receivedGradient,getComparator(receivedGradient.getType()), c));
 
 			trigger(new TManSample(view), tmanPort);
@@ -334,15 +351,12 @@ public final class TMan extends ComponentDefinition {
 			}
 			System.err.println("==============AFTER "+ name +" ========================================");
 		}
+		
 		List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
-
-
 
 		for(int i = 0; i < c; i ++) {
 			returnList.add(gradient.getEntries().get(i));
 		}
-
-
 
 		//Collections.sort(returnList, gradient.getComparator());
 		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
@@ -354,5 +368,4 @@ public final class TMan extends ComponentDefinition {
 
 		return returnList;
 	}
-
 }
