@@ -7,7 +7,6 @@ import java.util.Set;
 public class Utils {
 
 	
-	
 	public static <E> void removeDuplicates(List<E> list1){
         Set<E> setToRemoveDuplicates = new HashSet<E>();
         setToRemoveDuplicates.addAll(list1);

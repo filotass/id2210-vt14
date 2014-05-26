@@ -13,8 +13,9 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 	private int age;
 	private AvailableResources avr;
 	private int queueSize;
+	private long timestamp;
 
-	public PeerDescriptor(Address peerAddress,AvailableResources avr, int queueSize) {
+	public PeerDescriptor(Address peerAddress,AvailableResources avr, int queueSize, long timeStamp) {
 		this.peerAddress = peerAddress;
 		this.age = 0;
 		this.avr = avr;
@@ -42,12 +43,20 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 	public int getQueueSize() {
 		return queueSize;
 	}
+	
+	public void setTimeStamp(long timestamp){
+		this.timestamp = timestamp;
+	}
+	
+	public long getTimeStamp(){
+		return this.timestamp;
+	}
 
 	@Override
-	public int compareTo(PeerDescriptor that) {
-		if (this.age > that.age)
+	public int compareTo(PeerDescriptor other) {
+		if (this.timestamp > other.timestamp)
 			return 1;
-		if (this.age < that.age)
+		if (this.timestamp < other.timestamp)
 			return -1;
 		return 0;
 	}

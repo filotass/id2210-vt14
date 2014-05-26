@@ -88,7 +88,7 @@ public final class TMan extends ComponentDefinition {
 			r = new Random(tmanConfiguration.getSeed());
 			availableResources = init.getAvailableResources();
 			queuedJobs = init.getQueueJobs();
-			selfPeerDescriptor = new PeerDescriptor(self, availableResources, queuedJobs.size());
+			selfPeerDescriptor = new PeerDescriptor(self, availableResources, queuedJobs.size(),System.currentTimeMillis());
 
 			gradientCPU = new Gradient(new ArrayList<PeerDescriptor>(),Gradient.TYPE_CPU);
 			gradientMEM = new Gradient(new ArrayList<PeerDescriptor>(),Gradient.TYPE_MEM);
@@ -143,10 +143,11 @@ public final class TMan extends ComponentDefinition {
 		PeerDescriptor who = selectPeer(gradient);
 
 		ArrayList<PeerDescriptor> bufToSend = new ArrayList<PeerDescriptor>();
+		selfPeerDescriptor.setTimeStamp(System.currentTimeMillis());
 		bufToSend.add(selfPeerDescriptor);
 		
-		addAndNub(bufToSend, gradient.getEntries());
-		addAndNub(bufToSend, randomView);
+		bufToSend = keepFreshest(bufToSend, gradient.getEntries());
+		keepFreshest(bufToSend, randomView);
 
 		Gradient gradientToSend = new Gradient(bufToSend,gradient.getType());
 
@@ -157,35 +158,42 @@ public final class TMan extends ComponentDefinition {
 	}
 	
 	/**
-	 * Given a reference to an arraylist (l1), and another arrayList (l2) which to pick from, 
-	 * try to remove each element from l1 (if it exists) and then add that element form l2.
-	 * 
-	 * perform a nub (remove duplicates)
+	 * We should merge and keep 
 	 */
-	private void addAndNub(List<PeerDescriptor> l1, List<PeerDescriptor> l2) {
+	private ArrayList<PeerDescriptor> keepFreshest(List<PeerDescriptor> l1, List<PeerDescriptor> l2) {
 		
-		for(PeerDescriptor peer : l2) {
-			
-			// if it currently exists in many places, or not at all
-			while(l1.contains(peer)) {
-				
-				l1.remove(peer); // removes peer from l1 if it exists in l1
+		Utils.removeDuplicates(l1);
+		Utils.removeDuplicates(l2);
+		
+		ArrayList<PeerDescriptor> mergedList = new ArrayList<PeerDescriptor>();
+
+		mergedList.addAll(l1);
+		mergedList.addAll(l2);
+		
+		ArrayList<Integer> indexesToRemove = new ArrayList<Integer>();
+		for(int i=0; i<mergedList.size();i++){
+			for(int j=i+1;j<mergedList.size();j++){
+				if(mergedList.get(i).equals(mergedList.get(j))){
+					if(mergedList.get(i).compareTo(mergedList.get(j))>0){
+						indexesToRemove.add(j);
+					}else{
+						indexesToRemove.add(i);
+					}
+				}
 			}
-			
-			// In any case... Add peer to l1
-			l1.add(peer);
 		}
+		
+		Collections.sort(indexesToRemove,Collections.reverseOrder());
+		for(int i=0; i<indexesToRemove.size(); i++){
+			mergedList.remove(i);
+		}
+		
+
+		return mergedList;
+	
 	}
 	
-	private void addAndNub(Gradient g, List<PeerDescriptor> l2) {
-		
-		// Be sure to remove existing PeerDescriptors before adding new
-	    List<PeerDescriptor> tempRef = g.getEntries();
-	    addAndNub(tempRef,l2); // NOT a recursive call really, 
-	                           // just a call to the overloaded function
-	                           // which is compiled to another function
-		g.setEntries(tempRef);
-	}
+
 
 	/**
 	 * Handle gossip
@@ -199,8 +207,9 @@ public final class TMan extends ComponentDefinition {
 			Gradient gradientReceived = event.getRandomBuffer().getGradient();
 
 			Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(), gradientReceived.getType());
+			selfPeerDescriptor.setTimeStamp(System.currentTimeMillis());
 			gradientToRespond.add(selfPeerDescriptor);
-			addAndNub(gradientToRespond,randomView);
+			gradientToRespond.setEntries(keepFreshest(gradientToRespond.getEntries(),randomView));
 
 			TManAddressBuffer tManAddressBuffer = new TManAddressBuffer(self, gradientToRespond);
 
@@ -208,7 +217,7 @@ public final class TMan extends ComponentDefinition {
 
 			Gradient relatedGradient = getCorrectGradient(gradientReceived);
 
-			addAndNub(gradientReceived,relatedGradient.getEntries());
+			gradientReceived.setEntries(keepFreshest(gradientReceived.getEntries(),relatedGradient.getEntries()));
 			relatedGradient.setEntries(selectView(gradientReceived,getComparator(gradientReceived.getType()),c));
 			trigger(new TManSample(relatedGradient), tmanPort);
 
@@ -224,7 +233,7 @@ public final class TMan extends ComponentDefinition {
 		public void handle(ExchangeMsg.Response event) {
 			Gradient receivedGradient = event.getSelectedBuffer().getGradient();
 			Gradient view = getCorrectGradient(receivedGradient);
-			addAndNub(receivedGradient,view.getEntries());
+			receivedGradient.setEntries(keepFreshest(receivedGradient.getEntries(),view.getEntries()));
 			view.setEntries(selectView(receivedGradient,getComparator(receivedGradient.getType()), c));
 
 			trigger(new TManSample(view), tmanPort);
@@ -341,17 +350,6 @@ public final class TMan extends ComponentDefinition {
 		c = Math.min(gradient.getEntries().size(), c);
 		Collections.sort(gradient.getEntries(), comparator);
 
-		String name = comparator.getClass().getName();
-		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
-			System.out.println("==============GRADIENT "+ name +" ========================================");
-			System.out.println("My Values -- CPU:"+selfPeerDescriptor.getAvailableResources().getNumFreeCpus());
-			for(int i = 0; i < gradient.getEntries().size(); i ++) {
-				AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
-				System.out.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +" MEM = "+av.getFreeMemInMbs()+ " Peer ="+ gradient.getEntries().get(i).getAddress().getId()+ " Size: "+ gradient.getEntries().get(i).getQueueSize());
-			}
-			System.err.println("==============AFTER "+ name +" ========================================");
-		}
-		
 //		String name = comparator.getClass().getName();
 //		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
 //			System.out.println("==============GRADIENT "+ name +" ========================================");
@@ -360,30 +358,26 @@ public final class TMan extends ComponentDefinition {
 //				AvailableResources av = gradient.getEntries().get(i).getAvailableResources();
 //				System.out.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +" MEM = "+av.getFreeMemInMbs()+ " Peer ="+ gradient.getEntries().get(i).getAddress().getId()+ " Size: "+ gradient.getEntries().get(i).getQueueSize());
 //			}
-//			System.err.println("==============AFTER "+ name +" ========================================");
+//			System.out.println("==============AFTER "+ name +" ========================================");
 //		}
+		
+
 		List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
 
 		for(int i = 0; i < c; i ++) {
 			returnList.add(gradient.getEntries().get(i));
 		}
 
-		//Collections.sort(returnList, gradient.getComparator());
-		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
-			for(int i = 0; i < returnList.size(); i ++) {
-				AvailableResources av = returnList.get(i).getAvailableResources();
-				System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId()+" Size: "+ gradient.getEntries().get(i).getQueueSize());
-			}
-		}
-
-
 //		//Collections.sort(returnList, gradient.getComparator());
 //		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
 //			for(int i = 0; i < returnList.size(); i ++) {
 //				AvailableResources av = returnList.get(i).getAvailableResources();
-//				System.err.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId()+" Size: "+ gradient.getEntries().get(i).getQueueSize());
+//				System.out.println("ID =" +self.getId()+" CPUs = " + av.getNumFreeCpus() +"MEM = "+av.getFreeMemInMbs()+ "peer ="+ returnList.get(i).getAddress().getId()+" Size: "+ gradient.getEntries().get(i).getQueueSize());
 //			}
 //		}
+
+
+
 
 		return returnList;
 	}
