@@ -64,6 +64,9 @@ public final class ResourceManager extends ComponentDefinition {
     private Gradient gradientCPU;
     private Gradient gradientMEM;
     private Gradient gradientCombo;
+    
+	private int gradientSize;
+	private int index;
 
     public ResourceManager() {
 
@@ -110,7 +113,11 @@ public final class ResourceManager extends ComponentDefinition {
             
             Gradient gradientToUse = getRelevantGradient(job);
 
-            int rndIndex = (int) Math.random() * gradientToUse.getEntries().size();
+
+            //int rndIndex = (index % gradientSize);//(int) Math.random() * gradientToUse.getEntries().size();
+            //index++;
+            
+            int rndIndex = 0;
           
             RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(rndIndex).getAddress(),job);
             trigger(schJob, networkPort);
@@ -172,6 +179,8 @@ public final class ResourceManager extends ComponentDefinition {
         	}
         }
     };
+
+
     
     private Gradient getRelevantGradient(SuperJob event){
         // Define what gradient to use for finding the available resources...
@@ -200,10 +209,10 @@ public final class ResourceManager extends ComponentDefinition {
     		gradientCPU = gradient;
     	} else if(gradient.getType() == Gradient.TYPE_MEM) {
     		gradientMEM = gradient;
-    		
     	} else if(gradient.getType() == Gradient.TYPE_COMBO) {
     		gradientCombo = gradient;
-    		
+//    		gradientSize = gradient.getSize();
+//    		index = 0;
     	}else {
     		System.err.println("ERROR UNKNOWN GRADIENT TYPE");
     		System.exit(1);

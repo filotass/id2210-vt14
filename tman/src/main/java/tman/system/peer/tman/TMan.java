@@ -163,25 +163,25 @@ public final class TMan extends ComponentDefinition {
 	private ArrayList<PeerDescriptor> keepFreshest(List<PeerDescriptor> l1, List<PeerDescriptor> l2) {
 		
 		
-		System.out.println("NOW:"+System.currentTimeMillis());
-		System.out.println("========= List 1 ===============");
-		for(PeerDescriptor peer : l1){
-			AvailableResources av = peer.getAvailableResources();
-			System.out.println("ID =" +self.getId()+
-							   " CPUs = " + av.getNumFreeCpus() +
-							   " Peer ="+ peer.getAddress().getId() + 
-							   " Size: "+ peer.getQueueSize() + 
-							   " Time: "+peer.getTimeStamp());
-		}
-		System.out.println("========= List 2 ===============");
-		for(PeerDescriptor peer : l2){
-			AvailableResources av = peer.getAvailableResources();
-			System.out.println("ID =" +self.getId()+
-							   " CPUs = " + av.getNumFreeCpus() +
-							   " Peer ="+ peer.getAddress().getId() + 
-							   " Size: "+ peer.getQueueSize() + 
-							   " Time: "+peer.getTimeStamp());
-		}
+//		System.out.println("NOW:"+System.currentTimeMillis());
+//		System.out.println("========= List 1 ===============");
+//		for(PeerDescriptor peer : l1){
+//			AvailableResources av = peer.getAvailableResources();
+//			System.out.println("ID =" +self.getId()+
+//							   " CPUs = " + av.getNumFreeCpus() +
+//							   " Peer ="+ peer.getAddress().getId() + 
+//							   " Size: "+ peer.getQueueSize() + 
+//							   " Time: "+peer.getTimeStamp());
+//		}
+//		System.out.println("========= List 2 ===============");
+//		for(PeerDescriptor peer : l2){
+//			AvailableResources av = peer.getAvailableResources();
+//			System.out.println("ID =" +self.getId()+
+//							   " CPUs = " + av.getNumFreeCpus() +
+//							   " Peer ="+ peer.getAddress().getId() + 
+//							   " Size: "+ peer.getQueueSize() + 
+//							   " Time: "+peer.getTimeStamp());
+//		}
 		
 		Utils.removeDuplicates(l1);
 		Utils.removeDuplicates(l2);
@@ -204,15 +204,15 @@ public final class TMan extends ComponentDefinition {
 			}
 		}
 		
-		System.out.println("========= Merged List 1===============");
-		for(PeerDescriptor peer : mergedList){
-			AvailableResources av = peer.getAvailableResources();
-			System.out.println("ID =" +self.getId()+
-							   " CPUs = " + av.getNumFreeCpus() +
-							   " Peer ="+ peer.getAddress().getId() + 
-							   " Size: "+ peer.getQueueSize() + 
-							   " Time: "+peer.getTimeStamp());
-		}
+//		System.out.println("========= Merged List 1===============");
+//		for(PeerDescriptor peer : mergedList){
+//			AvailableResources av = peer.getAvailableResources();
+//			System.out.println("ID =" +self.getId()+
+//							   " CPUs = " + av.getNumFreeCpus() +
+//							   " Peer ="+ peer.getAddress().getId() + 
+//							   " Size: "+ peer.getQueueSize() + 
+//							   " Time: "+peer.getTimeStamp());
+//		}
 		
 		Collections.sort(indexesToRemove);
 		String indexes = "Indexes:";
@@ -220,17 +220,17 @@ public final class TMan extends ComponentDefinition {
 			mergedList.remove((int) indexesToRemove.get(i));
 			indexes += " " + indexesToRemove.get(i);
 		}
-		System.out.println(indexes);
-		
-		System.out.println("========= Merged List 2===============");
-		for(PeerDescriptor peer : mergedList){
-			AvailableResources av = peer.getAvailableResources();
-			System.out.println("ID =" +self.getId()+
-							   " CPUs = " + av.getNumFreeCpus() +
-							   " Peer ="+ peer.getAddress().getId() + 
-							   " Size: "+ peer.getQueueSize() + 
-							   " Time: "+peer.getTimeStamp());
-		}
+//		System.out.println(indexes);
+//		
+//		System.out.println("========= Merged List 2===============");
+//		for(PeerDescriptor peer : mergedList){
+//			AvailableResources av = peer.getAvailableResources();
+//			System.out.println("ID =" +self.getId()+
+//							   " CPUs = " + av.getNumFreeCpus() +
+//							   " Peer ="+ peer.getAddress().getId() + 
+//							   " Size: "+ peer.getQueueSize() + 
+//							   " Time: "+peer.getTimeStamp());
+//		}
 	
 
 		return mergedList;
