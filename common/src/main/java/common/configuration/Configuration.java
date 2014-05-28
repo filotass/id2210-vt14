@@ -36,7 +36,7 @@ public class Configuration {
         this.seed = seed;
         searchConfiguration = new RmConfiguration(seed);
 
-        tmanConfiguration = new TManConfiguration(seed, 50, 1);
+        tmanConfiguration = new TManConfiguration(seed, 400, 1);
         cyclonConfiguration = new CyclonConfiguration(seed, 5, 10, 400, 500000,(long) (Integer.MAX_VALUE - Integer.MIN_VALUE), 20);
 
         

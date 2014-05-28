@@ -20,6 +20,7 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 		this.age = 0;
 		this.avr = avr;
 		this.queueSize =queueSize;
+		this.timestamp = timeStamp;
 	}
 
 	public int incrementAndGetAge() {
@@ -44,8 +45,9 @@ public class PeerDescriptor implements Comparable<PeerDescriptor>, Serializable 
 		return queueSize;
 	}
 	
-	public void setTimeStamp(long timestamp){
+	public void setTimeStampAndQueueSize(long timestamp, int size){
 		this.timestamp = timestamp;
+		this.queueSize = size;
 	}
 	
 	public long getTimeStamp(){

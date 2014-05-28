@@ -143,7 +143,7 @@ public final class TMan extends ComponentDefinition {
 		PeerDescriptor who = selectPeer(gradient);
 
 		ArrayList<PeerDescriptor> bufToSend = new ArrayList<PeerDescriptor>();
-		selfPeerDescriptor.setTimeStamp(System.currentTimeMillis());
+		selfPeerDescriptor.setTimeStampAndQueueSize(System.currentTimeMillis(), queuedJobs.size());
 		bufToSend.add(selfPeerDescriptor);
 		
 		bufToSend = keepFreshest(bufToSend, gradient.getEntries());
@@ -161,6 +161,27 @@ public final class TMan extends ComponentDefinition {
 	 * We should merge and keep 
 	 */
 	private ArrayList<PeerDescriptor> keepFreshest(List<PeerDescriptor> l1, List<PeerDescriptor> l2) {
+		
+		
+		System.out.println("NOW:"+System.currentTimeMillis());
+		System.out.println("========= List 1 ===============");
+		for(PeerDescriptor peer : l1){
+			AvailableResources av = peer.getAvailableResources();
+			System.out.println("ID =" +self.getId()+
+							   " CPUs = " + av.getNumFreeCpus() +
+							   " Peer ="+ peer.getAddress().getId() + 
+							   " Size: "+ peer.getQueueSize() + 
+							   " Time: "+peer.getTimeStamp());
+		}
+		System.out.println("========= List 2 ===============");
+		for(PeerDescriptor peer : l2){
+			AvailableResources av = peer.getAvailableResources();
+			System.out.println("ID =" +self.getId()+
+							   " CPUs = " + av.getNumFreeCpus() +
+							   " Peer ="+ peer.getAddress().getId() + 
+							   " Size: "+ peer.getQueueSize() + 
+							   " Time: "+peer.getTimeStamp());
+		}
 		
 		Utils.removeDuplicates(l1);
 		Utils.removeDuplicates(l2);
@@ -183,11 +204,34 @@ public final class TMan extends ComponentDefinition {
 			}
 		}
 		
-		Collections.sort(indexesToRemove,Collections.reverseOrder());
-		for(int i=0; i<indexesToRemove.size(); i++){
-			mergedList.remove(i);
+		System.out.println("========= Merged List 1===============");
+		for(PeerDescriptor peer : mergedList){
+			AvailableResources av = peer.getAvailableResources();
+			System.out.println("ID =" +self.getId()+
+							   " CPUs = " + av.getNumFreeCpus() +
+							   " Peer ="+ peer.getAddress().getId() + 
+							   " Size: "+ peer.getQueueSize() + 
+							   " Time: "+peer.getTimeStamp());
 		}
 		
+		Collections.sort(indexesToRemove);
+		String indexes = "Indexes:";
+		for(int i=indexesToRemove.size()-1; i>=0; i--){
+			mergedList.remove((int) indexesToRemove.get(i));
+			indexes += " " + indexesToRemove.get(i);
+		}
+		System.out.println(indexes);
+		
+		System.out.println("========= Merged List 2===============");
+		for(PeerDescriptor peer : mergedList){
+			AvailableResources av = peer.getAvailableResources();
+			System.out.println("ID =" +self.getId()+
+							   " CPUs = " + av.getNumFreeCpus() +
+							   " Peer ="+ peer.getAddress().getId() + 
+							   " Size: "+ peer.getQueueSize() + 
+							   " Time: "+peer.getTimeStamp());
+		}
+	
 
 		return mergedList;
 	
@@ -207,7 +251,7 @@ public final class TMan extends ComponentDefinition {
 			Gradient gradientReceived = event.getRandomBuffer().getGradient();
 
 			Gradient gradientToRespond = new Gradient(new ArrayList<PeerDescriptor>(), gradientReceived.getType());
-			selfPeerDescriptor.setTimeStamp(System.currentTimeMillis());
+			selfPeerDescriptor.setTimeStampAndQueueSize(System.currentTimeMillis(), queuedJobs.size());
 			gradientToRespond.add(selfPeerDescriptor);
 			gradientToRespond.setEntries(keepFreshest(gradientToRespond.getEntries(),randomView));
 
@@ -350,22 +394,23 @@ public final class TMan extends ComponentDefinition {
 		c = Math.min(gradient.getEntries().size(), c);
 		Collections.sort(gradient.getEntries(), comparator);
 
-		String name = comparator.getClass().getName();
-		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
-			System.out.println(System.currentTimeMillis());
-			System.out.println("==============GRADIENT "+ name +" ========================================");
-			System.out.println("My Values -- CPU:"+selfPeerDescriptor.getAvailableResources().getNumFreeCpus());
-			for(int i = 0; i < gradient.getEntries().size(); i ++) {
-				PeerDescriptor peer = gradient.getEntries().get(i);
-				AvailableResources av = peer.getAvailableResources();
-				System.out.println("ID =" +self.getId()+
-								   " CPUs = " + av.getNumFreeCpus() +
-								   " Peer ="+ peer.getAddress().getId() + 
-								   " Size: "+ peer.getQueueSize() + 
-								   " Time: "+peer.getTimeStamp());
-			}
-			System.out.println("==============AFTER "+ name +" ========================================");
-		}
+//		String name = comparator.getClass().getName();
+//		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
+//		
+//			System.out.println("==============GRADIENT "+ name +" ========================================");
+//			System.out.println("Happening now:"+System.currentTimeMillis());
+//			System.out.println("My Values -- CPU:"+selfPeerDescriptor.getAvailableResources().getNumFreeCpus());
+//			for(int i = 0; i < gradient.getEntries().size(); i ++) {
+//				PeerDescriptor peer = gradient.getEntries().get(i);
+//				AvailableResources av = peer.getAvailableResources();
+//				System.out.println("ID =" +self.getId()+
+//								   " CPUs = " + av.getNumFreeCpus() +
+//								   " Peer ="+ peer.getAddress().getId() + 
+//								   " Size: "+ peer.getQueueSize() + 
+//								   " Time: "+peer.getTimeStamp());
+//			}
+//			System.out.println("==============AFTER "+ name +" ========================================");
+//		}
 		
 
 		List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
@@ -375,18 +420,18 @@ public final class TMan extends ComponentDefinition {
 		}
 
 
-		//Collections.sort(returnList, gradient.getComparator());
-		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
-			for(int i = 0; i < returnList.size(); i ++) {
-				PeerDescriptor peer = returnList.get(i);
-				AvailableResources av = peer.getAvailableResources();
-				System.out.println("ID =" +self.getId()+
-								   " CPUs = " + av.getNumFreeCpus() +
-								   " Peer ="+ peer.getAddress().getId() + 
-								   " Size: "+ peer.getQueueSize() + 
-								   " Time: "+peer.getTimeStamp());
-				}
-		}
+
+//		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
+//			for(int i = 0; i < returnList.size(); i ++) {
+//				PeerDescriptor peer = returnList.get(i);
+//				AvailableResources av = peer.getAvailableResources();
+//				System.out.println("ID =" +self.getId()+
+//								   " CPUs = " + av.getNumFreeCpus() +
+//								   " Peer ="+ peer.getAddress().getId() + 
+//								   " Size: "+ peer.getQueueSize() + 
+//								   " Time: "+peer.getTimeStamp());
+//				}
+//		}
 
 		return returnList;
 	}
