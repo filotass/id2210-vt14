@@ -3,15 +3,18 @@ package tman.system.peer.tman.comparators;
 import common.simulation.scenarios.Experiment;
 import cyclon.system.peer.cyclon.PeerDescriptor;
 
-public class ComparatorByCOMBO extends PeerComparator{
+public class ComparatorByLoad extends PeerComparator{
 
-	
-    public ComparatorByCOMBO(PeerDescriptor self) {
-    	super(self);
-    }
-	
+	public ComparatorByLoad(PeerDescriptor self) {
+		super(self);
+		// TODO Auto-generated constructor stub
+	}
+
 	@Override
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
+		if(a.getQueueSize() - b.getQueueSize() != 0){
+			return a.getQueueSize() - b.getQueueSize();
+		}
 		
 		double aCPU = a.getAvailableResources().getNumFreeCpus();
 		double bCPU = b.getAvailableResources().getNumFreeCpus();
@@ -37,16 +40,19 @@ public class ComparatorByCOMBO extends PeerComparator{
 		double bUtility = bNRM_CPU*bNRM_MEM;
 		double sUtility = sNRM_CPU*sNRM_MEM;
 		
-
-	      if (aUtility < sUtility && bUtility > sUtility) {
-	            return 1;
-	        } else if (bUtility < sUtility && aUtility > sUtility) {
-	            return -1;
-	        } else if (Math.abs(aUtility - sUtility) < Math.abs(bUtility - sUtility)) {
-	            return -1;
-	        }
-
-			return a.getQueueSize() - b.getQueueSize();
-
+      	if (aUtility < sUtility && bUtility > sUtility) {
+            return 1;
+        } else if (bUtility < sUtility && aUtility > sUtility) {
+            return -1;
+        } else if (Math.abs(aUtility - sUtility) < Math.abs(bUtility - sUtility)) {
+            return -1;
+        }
+		
+		
+		
+		return 0;
 	}
+	
+	
+
 }

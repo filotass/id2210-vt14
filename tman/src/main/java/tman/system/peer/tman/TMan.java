@@ -29,6 +29,7 @@ import se.sics.kompics.timer.Timer;
 import tman.simulator.snapshot.Snapshot;
 import tman.system.peer.tman.comparators.ComparatorByCOMBO;
 import tman.system.peer.tman.comparators.ComparatorByCPU;
+import tman.system.peer.tman.comparators.ComparatorByLoad;
 import tman.system.peer.tman.comparators.ComparatorByMEM;
 import tman.system.peer.tman.comparators.PeerComparator;
 
@@ -110,8 +111,8 @@ public final class TMan extends ComponentDefinition {
 		public void handle(TManSchedule event) {
 			Snapshot.updateTManPartners(selfPeerDescriptor, randomView);
 
-			constructGradientAndGossip(gradientCPU);
-			constructGradientAndGossip(gradientMEM);
+			//constructGradientAndGossip(gradientCPU);
+			//constructGradientAndGossip(gradientMEM);
 			constructGradientAndGossip(gradientCOMBO);
 		}
 	};
@@ -393,7 +394,11 @@ public final class TMan extends ComponentDefinition {
 		Utils.removeDuplicates(gradient.getEntries());
 		c = Math.min(gradient.getEntries().size(), c);
 		Collections.sort(gradient.getEntries(), comparator);
-
+		
+		List<PeerDescriptor> entries = gradient.getEntries();
+		List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
+		
+		
 //		String name = comparator.getClass().getName();
 //		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
 //		
@@ -412,15 +417,40 @@ public final class TMan extends ComponentDefinition {
 //			System.out.println("==============AFTER "+ name +" ========================================");
 //		}
 		
+		
+		boolean success = false;
+		int gradientIndex = 0;
 
-		List<PeerDescriptor> returnList = new ArrayList<PeerDescriptor>();
+		for(int i=0; i< entries.size(); i++){
+			PeerDescriptor peer = entries.get(i);
+			if(peer.getAvailableResources().getNumFreeCpus()>selfPeerDescriptor.getAvailableResources().getNumFreeCpus()){
+				returnList.add(peer);
+				success=true;
+				break;
+			}else if(peer.getAvailableResources().getNumFreeCpus()==selfPeerDescriptor.getAvailableResources().getNumFreeCpus()){
+				gradientIndex = i;
+			}
+		}
+
+		if(!success){
+			PeerDescriptor minLoadedPeer = entries.get(0);
+			for(int i=1; i<= gradientIndex; i++){
+				if(minLoadedPeer.getQueueSize() > entries.get(i).getQueueSize()){
+					minLoadedPeer = entries.get(i);
+				}
+			}
+			returnList.add(minLoadedPeer);
+		}
+
+
+
+		
 
 		for(int i = 0; i < c; i ++) {
 			returnList.add(gradient.getEntries().get(i));
 		}
 
-
-
+//
 //		if(name.equals("tman.system.peer.tman.comparators.ComparatorByCOMBO")){
 //			for(int i = 0; i < returnList.size(); i ++) {
 //				PeerDescriptor peer = returnList.get(i);

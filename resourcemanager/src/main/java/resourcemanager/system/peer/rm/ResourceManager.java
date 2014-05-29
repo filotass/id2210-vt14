@@ -114,10 +114,10 @@ public final class ResourceManager extends ComponentDefinition {
             Gradient gradientToUse = getRelevantGradient(job);
 
 
-            //int rndIndex = (index % gradientSize);//(int) Math.random() * gradientToUse.getEntries().size();
+            //int rndIndex = (index % gradientSize);//
             //index++;
             
-            int rndIndex = 0;
+            int rndIndex = (int) Math.random() * gradientToUse.getEntries().size();
           
             RequestResources.ScheduleJob schJob = new RequestResources.ScheduleJob(self, gradientToUse.getEntries().get(rndIndex).getAddress(),job);
             trigger(schJob, networkPort);
