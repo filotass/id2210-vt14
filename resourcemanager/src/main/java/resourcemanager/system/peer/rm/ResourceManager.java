@@ -28,6 +28,7 @@ import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import simulator.snapshot.Snapshot;
 import system.peer.RmPort;
+import tman.system.peer.tman.TManSamplePort;
 
 
 
@@ -48,7 +49,9 @@ public final class ResourceManager extends ComponentDefinition {
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
     Negative<Web> webPort = negative(Web.class);
+    
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
+    Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
     
     /**
      * Partial View of Peer Network
