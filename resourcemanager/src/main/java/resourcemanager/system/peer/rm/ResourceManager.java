@@ -16,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
@@ -31,8 +28,8 @@ import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import simulator.snapshot.Snapshot;
 import system.peer.RmPort;
-import tman.system.peer.tman.TManSample;
-import tman.system.peer.tman.TManSamplePort;
+
+
 
 /**
  * Resource Manager has 2 main independent roles.
@@ -43,8 +40,6 @@ import tman.system.peer.tman.TManSamplePort;
  */
 public final class ResourceManager extends ComponentDefinition {
 
-	private static final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
-    
     /**
      * Port for Receiving Incoming Jobs from Clients
      */
@@ -53,9 +48,7 @@ public final class ResourceManager extends ComponentDefinition {
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
     Negative<Web> webPort = negative(Web.class);
-    
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
-    Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
     
     /**
      * Partial View of Peer Network
@@ -121,7 +114,7 @@ public final class ResourceManager extends ComponentDefinition {
         subscribe(handleResourceAllocationRequest, networkPort);
         subscribe(handleResourceAllocationResponse, networkPort);
         subscribe(handleIncomingJob, networkPort);
-        subscribe(handleTManSample, tmanPort);
+
     }
 	
     Handler<RmInit> handleInit = new Handler<RmInit>() {
@@ -311,10 +304,5 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
-    Handler<TManSample> handleTManSample = new Handler<TManSample>() {
-        @Override
-        public void handle(TManSample event) {
 
-        }
-    };
 }
