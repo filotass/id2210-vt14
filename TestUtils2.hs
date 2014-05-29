@@ -12,7 +12,7 @@ import qualified Data.Map    as M
 import System.Directory      (getDirectoryContents)
 import System.Environment    (getArgs)
 import System.IO
-import System.FilePath.Posix (takeFileName)
+import System.FilePath.Posix (takeDirectory)
 
 -- list the commands
 data Command    = PRB  | INI | ASN | SCH deriving (Show,Read,Ord,Eq)
@@ -42,23 +42,26 @@ main = do
    [outfileDir,testCase] <- getArgs
    outputFiles <- getDirectoryContents outfileDir
    let skipFiles = [".","..",".DS_Store"]
+       name      = "/output0.out"
        spec      = case testCase of
                       "test1" -> test1
                       "test2" -> test2
-   forM_ [outfileDir++o|o<-outputFiles,not $ elem o skipFiles]
-         (\file->performOutputParsing spec file "resourcemanager/statistics/")
+   -- now print to the same dir as read from
+   forM_ [outfileDir++o++name|o<-outputFiles,not $ elem o skipFiles]
+         (\file->performOutputParsing spec file file)
 
 {- This is the workhorse that dispatches all calculations and handles errors -}
 performOutputParsing :: TestSpec -> FilePath -> FilePath -> IO ()
 performOutputParsing spec from to = catch 
-   (do file     <- readFile from
+   (do putStrLn $ "Now working on: " ++ (show from)
+       file     <- readFile from
        allLines <- sequence [runErrorT $ parseLine str|str<-lines file]
        -- do the statistics calcs
        let theMap = foldl (+->) M.empty $ rights allLines
            ls     = map ((,) spec) $ sort $ M.toList theMap
-           fName  = takeFileName from
-           calcs  = (,) (foldl calculations "" ls) (to++fName)
-           avgs   = (,) (averages ls)              (to++"-averages-"++fName)
+           drName = takeDirectory from
+           calcs  = (,) (foldl calculations "" ls) (drName++"/distribution.stat")
+           avgs   = (,) (averages ls)              (drName++"/statistics.stat")
        -- print files (calcs and averages)
        writeFileLine (snd calcs) (fst calcs) WriteMode
        writeFileLine (snd avgs)  (fst avgs)  WriteMode)
@@ -134,6 +137,4 @@ get99P ls = last percent99
 {- add one item to the output hashmap
    fst line is the jobId, snd line are the measures for the outputline -}
 (+->) :: Output -> OutputLine -> Output
-
 out +-> line = M.insertWith (++) (fst line) [snd line] out
-
