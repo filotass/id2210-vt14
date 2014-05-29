@@ -134,4 +134,6 @@ get99P ls = last percent99
 {- add one item to the output hashmap
    fst line is the jobId, snd line are the measures for the outputline -}
 (+->) :: Output -> OutputLine -> Output
+
 out +-> line = M.insertWith (++) (fst line) [snd line] out
+
