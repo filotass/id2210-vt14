@@ -11,20 +11,22 @@ public class ComparatorByCPU extends PeerComparator{
 	
 	@Override
 	public int compare(PeerDescriptor a, PeerDescriptor b) {
-		int aCPU = a.getAvailableResources().getNumFreeCpus();
-		int bCPU = b.getAvailableResources().getNumFreeCpus();
-		int selfCPU = self.getAvailableResources().getNumFreeCpus();
 		
-		
-        if (aCPU < selfCPU && bCPU > selfCPU) {
-            return 1;
-        } else if (bCPU < selfCPU && aCPU > selfCPU) {
-            return -1;
-        } else if (Math.abs(aCPU - selfCPU) < Math.abs(bCPU - selfCPU)) {
-            return -1;
-        }
+		double aCPU = a.getAvailableResources().getNumFreeCpus();
+		double bCPU = b.getAvailableResources().getNumFreeCpus();
 
-		return a.getQueueSize() - b.getQueueSize();
+
+		
+		if(a.getQueueSize() - b.getQueueSize()!=0){
+			return a.getQueueSize() - b.getQueueSize();
+		}
+		
+		if(bCPU > aCPU){
+			return 1;
+		}else if(bCPU < aCPU){
+			return -1;
+		}	    
+		return 0;
 	}
 
 
