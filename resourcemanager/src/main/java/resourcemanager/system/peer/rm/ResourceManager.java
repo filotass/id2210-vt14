@@ -145,10 +145,6 @@ public final class ResourceManager extends ComponentDefinition {
             if (neighbours.isEmpty()) {
                 return;
             }
-            // TODO: Implement
-            //Address dest = neighbours.get(random.nextInt(neighbours.size()));
-
-
         }
     };
     
@@ -158,7 +154,6 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-           // System.out.println("Received samples: " + event.getSample().size());
             
             // receive a new list of neighbours
             neighbours.clear();
@@ -206,7 +201,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Request> handleResourceAllocationRequest = new Handler<RequestResources.Request>() {
         @Override
         public void handle(RequestResources.Request event) {
-        	//System.out.println("Request incoming for job with id = "+ event.getJobID());
+        	
         	boolean eval = (availableResources.getFreeMemInMbs()>= event.getAmountMemInMb()) && 
         				   (availableResources.getNumFreeCpus() >= event.getNumCpus());
         	trigger(new RequestResources.Response(self, event.getSource(),event.getJobID(), eval,queuedJobs.size()),networkPort);
@@ -221,8 +216,6 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
-            
-        	//System.out.println("Response incoming for job with id = "+ event.getJobID() + " was " + event.isSuccessful());
             
         	List<RequestResources.Response>  list =  probesReceived.get(event.getJobID());
             

@@ -102,9 +102,6 @@ public final class TMan extends ComponentDefinition {
         public void handle(CyclonSample event) {
             List<Address> cyclonPartners = event.getSample();
 
-            System.err.println("It works!");
-           
-
             tmanPartners.addAll(cyclonPartners);
             Utils.removeDuplicates(tmanPartners);
             
@@ -139,13 +136,6 @@ public final class TMan extends ComponentDefinition {
         	
         	
         	buf = new TManAddressBuffer(self, temp);
-        	
-        	//TODO call c times getSoftMaxAddress();
-        	
-        
-
-        	
-        	
         }
     };
 
