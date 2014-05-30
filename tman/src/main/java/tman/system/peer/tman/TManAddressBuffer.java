@@ -13,9 +13,6 @@ public class TManAddressBuffer implements Serializable {
 	private static final long serialVersionUID = 7555581949994578697L;
 	private final Address from;
 	private final Gradient gradient;
-	
-
-
 
 	public TManAddressBuffer(Address from,Gradient gradient) {
 		super();
@@ -23,11 +20,9 @@ public class TManAddressBuffer implements Serializable {
 		this.gradient = gradient;
 	}
 
-
 	public Address getFrom() {
 		return from;
 	}
-
 
 	public int getSize() {
 		return gradient.getEntries().size();
@@ -37,10 +32,7 @@ public class TManAddressBuffer implements Serializable {
 		return gradient;
 	}
 
-
 	public List<PeerDescriptor> getAddresses() {
 		return gradient.getEntries();
 	}
-	
-
 }

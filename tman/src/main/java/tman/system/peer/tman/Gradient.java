@@ -57,8 +57,4 @@ public class Gradient implements Serializable {
 	public int getType() {
 		return type;
 	}
-	
-
-	
-	
 }
