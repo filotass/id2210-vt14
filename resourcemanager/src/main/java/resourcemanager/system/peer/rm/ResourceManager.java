@@ -137,8 +137,6 @@ public final class ResourceManager extends ComponentDefinition {
         	SuperJob job = schJob.getJob();
         	Snapshot.report(Snapshot.ASN + Snapshot.S + job.getId() + Snapshot.S + System.currentTimeMillis());
 
-        	//System.out.println("HANDLE INCOMING JOB, MY RESOURCES ARE: " + availableResources+ " Queue size="+queuedJobs.size());
-        	
         	if(!scheduleJob(job)){
         		queuedJobs.add(job);
         	}
